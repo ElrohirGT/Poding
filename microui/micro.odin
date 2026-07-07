@@ -1,5 +1,6 @@
 package main
 
+import "core:bytes"
 import "core:fmt"
 import "core:strings"
 import "vendor:raylib"
@@ -17,6 +18,9 @@ test_window :: proc(ctx: ^microui.Context) {
 		if (microui.button(ctx, "Press!") == {.SUBMIT}) {
 			fmt.println("Pressed!")
 		}
+		textlen := 10
+		buff := [10]u8{}
+		microui.textbox(ctx, buff[:], &textlen)
 	}
 }
 
@@ -76,7 +80,16 @@ main :: proc() {
 		for ch := raylib.GetCharPressed(); ch != 0; ch = raylib.GetCharPressed() {
 			fmt.sbprintf(txt, "%c", ch)
 		}
+		if (len(txt.buf)>0) {
+			fmt.printf("Got text! %s\n", txt.buf[:])
+		}
 		microui.input_text(ctx, strings.to_string(txt^))
+
+		for k := raylib.GetKeyPressed(); k != raylib.KeyboardKey.KEY_NULL; k = raylib.GetKeyPressed() {
+			if map_k, ok := map_to_microui_key(k); ok {
+				microui.input_key_down(ctx, map_k)
+			}
+		}
 
 		process_frame(ctx)
 
@@ -113,4 +126,43 @@ process_frame ::proc(ctx: ^microui.Context){
 	microui.begin(ctx)
 	defer microui.end(ctx)
 	test_window(ctx)
+}
+
+map_to_microui_key :: proc(key: raylib.KeyboardKey) -> (microui.Key, bool) {
+	a : microui.Key
+	#partial switch key {
+	case .LEFT_SHIFT: fallthrough
+	case .RIGHT_SHIFT:
+		a = microui.Key.SHIFT
+	case .LEFT_CONTROL: fallthrough
+	case .RIGHT_CONTROL:
+		a = microui.Key.CTRL
+	case .LEFT_ALT: fallthrough
+	case .RIGHT_ALT:
+		a = microui.Key.ALT
+	case .BACKSPACE:
+		a = microui.Key.BACKSPACE
+	case .DELETE:
+		a = microui.Key.DELETE
+	case .ENTER:
+		a = microui.Key.RETURN
+	case .LEFT:
+		a = microui.Key.LEFT
+	case .RIGHT:
+		a = microui.Key.RIGHT
+	case .HOME:
+		a = microui.Key.HOME
+	case .END:
+		a = microui.Key.END
+	case .A:
+		a = microui.Key.A
+	case .X:
+		a = microui.Key.X
+	case .C:
+		a = microui.Key.C
+	case .V:
+		a = microui.Key.V
+	case: return a, false
+	}
+	return a, true
 }
