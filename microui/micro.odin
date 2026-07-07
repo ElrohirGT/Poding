@@ -1,12 +1,12 @@
 package main
 
-import "core:bytes"
 import "core:fmt"
 import "core:strings"
 import "vendor:raylib"
 import "vendor:microui"
 
 FontSize ::  25
+buff := [10]u8{}
 
 test_window :: proc(ctx: ^microui.Context) {
 	window_width :i32 = 300
@@ -19,8 +19,9 @@ test_window :: proc(ctx: ^microui.Context) {
 			fmt.println("Pressed!")
 		}
 		textlen := 10
-		buff := [10]u8{}
-		microui.textbox(ctx, buff[:], &textlen)
+		if (microui.textbox(ctx, buff[:], &textlen) == {.SUBMIT}) {
+			microui.set_focus(ctx, ctx.last_id)
+		}
 	}
 }
 
@@ -37,7 +38,7 @@ text_height :: proc(font: microui.Font) -> i32 {
 }
 
 main :: proc() {
-	ctx := new(microui.Context)
+	ctx := &microui.Context{}
 	microui.init(ctx)
 	ctx.text_width = text_width
 	ctx.text_height = text_height
@@ -79,11 +80,12 @@ main :: proc() {
 		strings.builder_init(txt)
 		for ch := raylib.GetCharPressed(); ch != 0; ch = raylib.GetCharPressed() {
 			fmt.sbprintf(txt, "%c", ch)
+			// fmt.printf("%c ", ch)
 		}
 		if (len(txt.buf)>0) {
-			fmt.printf("Got text! %s\n", txt.buf[:])
+			str := strings.to_string(txt^)
+			microui.input_text(ctx, str)
 		}
-		microui.input_text(ctx, strings.to_string(txt^))
 
 		for k := raylib.GetKeyPressed(); k != raylib.KeyboardKey.KEY_NULL; k = raylib.GetKeyPressed() {
 			if map_k, ok := map_to_microui_key(k); ok {
