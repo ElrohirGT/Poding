@@ -7,9 +7,10 @@ import "vendor:raylib"
 import "vendor:microui"
 
 FontSize ::  25
-buff := [10]u8{}
+backing_buff := [10]u8{}
+buff_len := 0
 
-test_window :: proc(ctx: ^microui.Context) {
+test_window :: proc(ctx: ^microui.Context, buff: []u8) {
 	window_width :i32 = 300
 	window_height :i32 = 240
 	if (microui.begin_window(ctx, "Debug window 1", microui.Rect{350, 250, window_width, window_height})) {
@@ -19,8 +20,9 @@ test_window :: proc(ctx: ^microui.Context) {
 		microui.button(ctx, "X");
 		// buff := ctx.text_input.buf[:]
 		// buff_len := len(buff)
-		buff_len := 10
-		microui.textbox(ctx, buff[:], &buff_len)
+		microui.textbox(ctx, buff, &buff_len) 
+		// 	fmt.printfln("buff: %s, len: %d", buff, buff_len)
+		// }
 		// value :f32 = 5.0
 		// microui.slider(ctx, &value, 0, 10, 0.1)
 		// microui.set_focus(ctx, ctx.last_id)
@@ -47,6 +49,7 @@ main :: proc() {
 	ctx.text_height = text_height
 
 	raylib.InitWindow(800, 600, "Microui Testing!")
+	buff := backing_buff[:]
 
 	for !raylib.WindowShouldClose() {
 		raylib.BeginDrawing()
@@ -95,7 +98,7 @@ main :: proc() {
 		}
 
 
-		process_frame(ctx)
+		process_frame(ctx, buff)
 
 		pcm: ^microui.Command = nil
 		for microui.next_command(ctx, &pcm) {
@@ -126,10 +129,10 @@ main :: proc() {
 	}
 }
 
-process_frame ::proc(ctx: ^microui.Context){
+process_frame ::proc(ctx: ^microui.Context, buff: []u8){
 	microui.begin(ctx)
 	defer microui.end(ctx)
-	test_window(ctx)
+	test_window(ctx, buff)
 }
 
 map_to_microui_key :: proc(key: raylib.KeyboardKey) -> (microui.Key, bool) {
