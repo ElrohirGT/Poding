@@ -1,6 +1,7 @@
 package main
 
 import "core:fmt"
+import "core:c"
 import "core:strings"
 import "vendor:raylib"
 import "vendor:microui"
@@ -14,14 +15,16 @@ test_window :: proc(ctx: ^microui.Context) {
 	if (microui.begin_window(ctx, "Debug window 1", microui.Rect{350, 250, window_width, window_height})) {
 		defer microui.end_window(ctx)
 
-		microui.label(ctx, "Sample Label!")
-		if (microui.button(ctx, "Press!") == {.SUBMIT}) {
-			fmt.println("Pressed!")
-		}
-		textlen := 10
-		if (microui.textbox(ctx, buff[:], &textlen) == {.SUBMIT}) {
-			microui.set_focus(ctx, ctx.last_id)
-		}
+		microui.layout_row(ctx, []i32{ 30, -90, -1 })
+		microui.button(ctx, "X");
+		// buff := ctx.text_input.buf[:]
+		// buff_len := len(buff)
+		buff_len := 10
+		microui.textbox(ctx, buff[:], &buff_len)
+		// value :f32 = 5.0
+		// microui.slider(ctx, &value, 0, 10, 0.1)
+		// microui.set_focus(ctx, ctx.last_id)
+		microui.button(ctx, "Submit")
 	}
 }
 
@@ -76,22 +79,21 @@ main :: proc() {
 			microui.input_mouse_up(ctx, mouseX, mouseY, microui.Mouse.MIDDLE)
 		}
 
-		txt := &strings.Builder{}
-		strings.builder_init(txt)
-		for ch := raylib.GetCharPressed(); ch != 0; ch = raylib.GetCharPressed() {
-			fmt.sbprintf(txt, "%c", ch)
-			// fmt.printf("%c ", ch)
-		}
-		if (len(txt.buf)>0) {
-			str := strings.to_string(txt^)
-			microui.input_text(ctx, str)
-		}
-
 		for k := raylib.GetKeyPressed(); k != raylib.KeyboardKey.KEY_NULL; k = raylib.GetKeyPressed() {
-			if map_k, ok := map_to_microui_key(k); ok {
-				microui.input_key_down(ctx, map_k)
+			microui.input_key_down(ctx, cast(microui.Key)k)
+
+			size: c.int
+			c_text := raylib.CodepointToUTF8(raylib.GetCharPressed(), &size)
+			text, err := strings.clone_from_cstring_bounded(c_text, int(size))
+			if err != nil {
+				panic("Failed to clone to odin string")
+			}
+			if len(text) > 0 {
+				microui.input_text(ctx, text)
+				fmt.printfln("Got text: %s - %s | %d", text, ctx.text_input.buf[:], strings.builder_len(ctx.text_input))
 			}
 		}
+
 
 		process_frame(ctx)
 
