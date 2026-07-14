@@ -1,7 +1,6 @@
 package main
 
 import "vendor:raylib"
-import "core:fmt"
 
 update :: proc(state: ^GameState, dt: f32) {
 	if raylib.IsKeyDown(raylib.KeyboardKey.RIGHT) {

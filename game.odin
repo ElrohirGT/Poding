@@ -1,5 +1,6 @@
 package main
 
+import "core:slice"
 import "core:fmt"
 import "core:time"
 import "vendor:raylib"
@@ -70,29 +71,39 @@ generate_default_scene :: proc() -> GameState {
 	return state
 }
 
-generate_collision_test_scene :: proc() -> GameState {
-	// blocks := []Vec2{
-	// 	{150.0, 150.0},
-	// 	{250.0, 50.0},
-	// 	{350.0, 150.0},
-	// 	{250.0, 250.0},
-	// }
+block_collision_scene :: proc() -> GameState {
+	blocks := []Vec2{
+		{150.0, 150.0},
+		{250.0, 50.0},
+		{350.0, 150.0},
+		{250.0, 250.0},
+	}
 	state := GameState{
-		blocks = []Vec2{
-			{150, 150}
-		},
+		blocks = slice.clone(blocks),
 		padel_pos = {SCREEN_WIDTH / 2 - PADEL_WIDTH / 2, SCREEN_HEIGHT * 0.9}
 	}
 	state.ball.pos = Vec2{150 + BLOCK_WIDTH + BALL_RADIUS + 50, 150+BLOCK_HEIGHT / 2}
-	state.ball.vel = Vec2{-75, 0}
-	// state.ball.vel = Vec2{0, -75}
+	// state.ball.vel = Vec2{-75, 0}
+	state.ball.vel = Vec2{0, -75}
+	return state
+}
+
+padel_collision_scene :: proc() -> GameState {
+	state := GameState {
+		padel_pos = {SCREEN_WIDTH / 2 - PADEL_WIDTH / 2, SCREEN_HEIGHT * 0.9}
+	}
+	state.ball.pos = Vec2{150 + BLOCK_WIDTH + BALL_RADIUS + 50, 150+BLOCK_HEIGHT / 2}
+	// state.ball.vel = Vec2{-75, 0}
+	state.ball.vel = Vec2{0, -75}
+
 	return state
 }
 
 main :: proc() {
 	raylib.InitWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "Main Window")
 	defer raylib.CloseWindow()
-	state := generate_collision_test_scene()
+	// state := block_collision_scene()
+	state := padel_collision_scene()
 	// state := generate_default_scene()
 
 	fmt.printfln("1: %v", state)
