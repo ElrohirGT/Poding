@@ -14,7 +14,8 @@ Ball :: struct {
 GameState :: struct {
 	padel_pos: Vec2,
 	ball: Ball,
-	blocks: []Vec2
+	blocks: []Vec2,
+	end_state: string
 }
 
 BallTouching :: enum {
@@ -67,7 +68,7 @@ generate_default_scene :: proc() -> GameState {
 		padel_pos = {SCREEN_WIDTH / 2 - PADEL_WIDTH / 2, SCREEN_HEIGHT * 0.9}
 	}
 	state.ball.pos = Vec2{state.padel_pos.x + PADEL_WIDTH / 2, state.padel_pos.y - BALL_RADIUS}
-	state.ball.vel = Vec2{15, 15}
+	state.ball.vel = Vec2{0, 75}
 	return state
 }
 
@@ -92,9 +93,8 @@ padel_collision_scene :: proc() -> GameState {
 	state := GameState {
 		padel_pos = {SCREEN_WIDTH / 2 - PADEL_WIDTH / 2, SCREEN_HEIGHT * 0.9}
 	}
-	state.ball.pos = Vec2{150 + BLOCK_WIDTH + BALL_RADIUS + 50, 150+BLOCK_HEIGHT / 2}
-	// state.ball.vel = Vec2{-75, 0}
-	state.ball.vel = Vec2{0, -75}
+	state.ball.pos = Vec2{50, 150+BLOCK_HEIGHT / 2}
+	state.ball.vel = Vec2{150, 75}
 
 	return state
 }
@@ -103,15 +103,12 @@ main :: proc() {
 	raylib.InitWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "Main Window")
 	defer raylib.CloseWindow()
 	// state := block_collision_scene()
-	state := padel_collision_scene()
-	// state := generate_default_scene()
-
-	fmt.printfln("1: %v", state)
+	// state := padel_collision_scene()
+	state := generate_default_scene()
 
 	sec_in_ns: i64 = 1_000_000_000
 	max_frame_duration := sec_in_ns / FPS_CAP 
 	lastFrameStart := time.now()._nsec - max_frame_duration
-	fmt.printfln("2: %v", state)
 	for !raylib.WindowShouldClose() {
 		{
 			frame_start := time.now()._nsec
