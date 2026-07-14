@@ -3,14 +3,15 @@ package main
 import "vendor:raylib"
 
 update :: proc(state: ^GameState, dt: f32) {
+	padel_vel_x :f32 = 0.0
 	if raylib.IsKeyDown(raylib.KeyboardKey.RIGHT) {
-		state.padel_pos.x += PADEL_VELOCITY * dt
+		padel_vel_x += PADEL_VELOCITY * dt
 	}
 	if raylib.IsKeyDown(raylib.KeyboardKey.LEFT) {
-		state.padel_pos.x -= PADEL_VELOCITY * dt
+		padel_vel_x -= PADEL_VELOCITY * dt
 	}
+	state.padel_pos.x += padel_vel_x
 
-	state.ball.pos += state.ball.vel * dt
 	del_idx := -1
 	for i := 0; i < len(state.blocks); i+=1 {
 		b_pos := state.blocks[i]
@@ -55,6 +56,7 @@ update :: proc(state: ^GameState, dt: f32) {
 
 		if touching != BallTouching.NO_TOUCH {
 			state.ball.vel *= 1.1
+			state.ball.vel.x += padel_vel_x / dt
 		}
 	}
 
@@ -76,6 +78,8 @@ update :: proc(state: ^GameState, dt: f32) {
 	if state.end_state != "" && raylib.IsKeyDown(.R) {
 		state^ = generate_default_scene()
 	}
+
+	state.ball.pos += state.ball.vel * dt
 }
 
 is_left :: proc(a,b: f32) -> bool {
