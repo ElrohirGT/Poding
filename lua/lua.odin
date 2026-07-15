@@ -25,9 +25,9 @@ lua_tutorial :: proc(t: ^testing.T) {
     stack := lua.getglobal(L, "arr") // The stack only has one variable
     testing.expect(t, stack == i32(lua.TTABLE), "Cannot find variable")
 
-		lua.rawgeti(L, -1, 1)
+		lua.rawgeti(L, -1, 2)
 		n := lua.tonumber(L, -1)
-		testing.expect(t, n == 1, fmt.aprintf("n == 1 (%f == 1)", n))
+		testing.expect(t, n == 2, fmt.aprintf("n == 2 (%f == 2)", n))
 
     lua.settop(L, 0) // Clear the stack
     testing.expect(t, lua.gettop(L) == 0, "Cannot clear stack")

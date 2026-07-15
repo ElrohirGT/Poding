@@ -1,28 +1,22 @@
 package main
 
-import "core:strings"
 import "core:fmt"
+import "core:strings"
 import "vendor:raylib"
 import lua "vendor:lua/5.4"
 
+
+main :: proc() {
+	cfg, err := parse_file("cfg.lua")
+	if err != "" {
+		fmt.printfln("ERROR: %s", err)
+		return
+	}
+	fmt.printfln("CFG: %#v", cfg)
+}
+
 GameConfig :: struct {
-	ScreenWidth: int,
-	ScreenHeight: int,
-	FpsCap: int,
-
 	BackgroundColor: raylib.Color,
-
-	BlockWidth: int,
-	BlockHeight: int,
-	BlockColors: []raylib.Color,
-
-	PadelWidth: int,
-	PadelHeight: int,
-	PadelColor: raylib.Color,
-	PadelVelocity: int,
-
-	BallRadius: int,
-	BallColor: raylib.Color,
 }
 
 parse_file :: proc(file: string) -> (^GameConfig, string) {
@@ -44,15 +38,6 @@ parse_file :: proc(file: string) -> (^GameConfig, string) {
 	}
 
 	cfg := new(GameConfig)
-	if parse_lua_int(L, &cfg.ScreenWidth, "ScreenWidth") != .OK {
-		return cfg, "Failed to parse `ScreenWidth`"
-	}
-	if parse_lua_int(L, &cfg.ScreenHeight, "ScreenHeight") != .OK {
-		return cfg, "Failed to parse `ScreenHeight`"
-	}
-	if parse_lua_int(L, &cfg.FpsCap, "FpsCap") != .OK {
-		return cfg, "Failed to parse `FpsCap`"
-	}
 	if parse_lua_raylib_color(L, &cfg.BackgroundColor, "BackgroundColor") != .OK {
 		return cfg, "Failed to parse `BackgroundColor`"
 	}
