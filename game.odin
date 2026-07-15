@@ -1,7 +1,7 @@
 package main
 
-import "core:slice"
 import "core:fmt"
+import "core:slice"
 import "core:time"
 import "vendor:raylib"
 
@@ -100,6 +100,13 @@ padel_collision_scene :: proc() -> GameState {
 }
 
 main :: proc() {
+	cfg, err := parse_file("cfg.lua")
+	if err != "" {
+		fmt.printfln("ERROR: %s", err)
+		return
+	}
+	fmt.printfln("CFG: %#v", cfg)
+
 	raylib.InitWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "Main Window")
 	defer raylib.CloseWindow()
 	// state := block_collision_scene()
