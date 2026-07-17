@@ -1,0 +1,20 @@
+ScreenWidth = 800
+ScreenHeight = 400
+FpsCap = 60
+
+BackgroundColor  = [80, 61, 63, 255]
+
+BlockWidth = 100
+BlockHeight = 50
+BlockColors = [
+	[82, 255, 184, 255],
+	[83, 153, 135, 255]
+]
+
+PadelWidth = 200
+PadelHeight = 25
+PadelColor = [97, 87, 86, 255]
+PadelVelocity = 175
+
+BallRadius = 10
+BallColor = [77, 255, 243, 255]
