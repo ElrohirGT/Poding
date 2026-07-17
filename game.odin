@@ -15,7 +15,8 @@ GameState :: struct {
 	padel_pos: Vec2,
 	ball: Ball,
 	blocks: []Vec2,
-	end_state: string
+	end_state: string,
+	cfg: ^GameConfig
 }
 
 BallTouching :: enum {
@@ -26,34 +27,13 @@ BallTouching :: enum {
 	BOTTOM
 }
 
-SCREEN_WIDTH :: 800
-SCREEN_HEIGHT :: 400
-FPS_CAP :: 60
-
-BACKGROUND_COLOR  :: raylib.Color{80, 61, 63, 255}
-
-BLOCK_WIDTH :: 100
-BLOCK_HEIGHT :: 50
-BLOCK_COLORS :: []raylib.Color{
-	{82, 255, 184, 255},
-	{83, 153, 135, 255}
-}
-
-PADEL_WIDTH :: 200
-PADEL_HEIGHT :: 25
-PADEL_COLOR :: raylib.Color{97, 87, 86, 255}
-PADEL_VELOCITY :: 175
-
-BALL_RADIUS :: 10
-BALL_COLOR :: raylib.Color{77, 255, 243, 255}
-
-generate_blocks :: proc(rows, cells, left_margin, top_margin, horizontal_gap, vertical_gap: int) -> []Vec2 {
+generate_blocks :: proc(cfg: ^GameConfig, rows, cells, left_margin, top_margin, horizontal_gap, vertical_gap: int) -> []Vec2 {
 	blocks := [dynamic]Vec2{}
 
 	for i := 0; i<rows; i+=1 {
 		for j := 0; j<cells; j+=1 {
-			x := cast(f32)(BLOCK_WIDTH * j + left_margin + horizontal_gap*j)
-			y := cast(f32)(BLOCK_HEIGHT * i + top_margin + vertical_gap*i)
+			x := cast(f32)(int(cfg.BlockWidth) * j + left_margin + horizontal_gap*j)
+			y := cast(f32)(int(cfg.BlockHeight) * i + top_margin + vertical_gap*i)
 			append(&blocks, Vec2{x,y})
 		}
 	}
@@ -61,18 +41,19 @@ generate_blocks :: proc(rows, cells, left_margin, top_margin, horizontal_gap, ve
 	return blocks[:]
 }
 
-generate_default_scene :: proc() -> GameState {
+generate_default_scene :: proc(cfg: ^GameConfig) -> GameState {
 	blocks := []Vec2{}
 	state := GameState{
-		blocks = generate_blocks(3, 7, 50, 50, 3, 3),
-		padel_pos = {SCREEN_WIDTH / 2 - PADEL_WIDTH / 2, SCREEN_HEIGHT * 0.9}
+		blocks = generate_blocks(cfg, 3, 7, 50, 50, 3, 3),
+		padel_pos = {f32(cfg.ScreenWidth / 2 - cfg.PadelWidth / 2), f32(cfg.ScreenHeight) * 0.9}
 	}
-	state.ball.pos = Vec2{state.padel_pos.x + PADEL_WIDTH / 2, state.padel_pos.y - BALL_RADIUS}
+	state.ball.pos = Vec2{state.padel_pos.x + f32(cfg.PadelWidth) / 2, state.padel_pos.y - f32(cfg.BallRadius)}
 	state.ball.vel = Vec2{0, 75}
+	state.cfg = cfg
 	return state
 }
 
-block_collision_scene :: proc() -> GameState {
+block_collision_scene :: proc(cfg: ^GameConfig) -> GameState {
 	blocks := []Vec2{
 		{150.0, 150.0},
 		{250.0, 50.0},
@@ -81,40 +62,38 @@ block_collision_scene :: proc() -> GameState {
 	}
 	state := GameState{
 		blocks = slice.clone(blocks),
-		padel_pos = {SCREEN_WIDTH / 2 - PADEL_WIDTH / 2, SCREEN_HEIGHT * 0.9}
+		padel_pos = {f32(cfg.ScreenWidth / 2 - cfg.PadelWidth / 2), f32(cfg.ScreenHeight) * 0.9}
 	}
-	state.ball.pos = Vec2{150 + BLOCK_WIDTH + BALL_RADIUS + 50, 150+BLOCK_HEIGHT / 2}
+	state.ball.pos = Vec2{f32(150 + cfg.BlockWidth + cfg.BallRadius + 50), 150+f32(cfg.BlockHeight) / 2}
 	// state.ball.vel = Vec2{-75, 0}
 	state.ball.vel = Vec2{0, -75}
+	state.cfg = cfg
 	return state
 }
 
-padel_collision_scene :: proc() -> GameState {
+padel_collision_scene :: proc(cfg: ^GameConfig) -> GameState {
 	state := GameState {
-		padel_pos = {SCREEN_WIDTH / 2 - PADEL_WIDTH / 2, SCREEN_HEIGHT * 0.9}
+		padel_pos = {f32(cfg.ScreenWidth / 2 - cfg.PadelWidth / 2), f32(cfg.ScreenHeight) * 0.9}
 	}
-	state.ball.pos = Vec2{50, 150+BLOCK_HEIGHT / 2}
+	state.ball.pos = Vec2{50, 150+f32(cfg.BlockHeight) / 2}
 	state.ball.vel = Vec2{150, 75}
-
+	state.cfg = cfg
 	return state
 }
 
 main :: proc() {
-	cfg, err := parse_file("cfg.lua")
-	if err != "" {
-		fmt.printfln("ERROR: %s", err)
-		return
-	}
+	cfg := parse_file("cfg.toml")
 	fmt.printfln("CFG: %#v", cfg)
 
-	raylib.InitWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "Main Window")
+	raylib.InitWindow(cfg.ScreenWidth, cfg.ScreenHeight, "Main Window")
 	defer raylib.CloseWindow()
-	// state := block_collision_scene()
-	// state := padel_collision_scene()
-	state := generate_default_scene()
+	// state := block_collision_scene(cfg)
+	// state := padel_collision_scene(cfg)
+	state := generate_default_scene(cfg)
+
 
 	sec_in_ns: i64 = 1_000_000_000
-	max_frame_duration := sec_in_ns / FPS_CAP 
+	max_frame_duration := sec_in_ns / i64(cfg.FpsCap)
 	lastFrameStart := time.now()._nsec - max_frame_duration
 	for !raylib.WindowShouldClose() {
 		{

@@ -5,28 +5,27 @@ import "core:c"
 import "vendor:raylib"
 
 render :: proc(state: ^GameState) {
-	raylib.ClearBackground(BACKGROUND_COLOR)
+	raylib.ClearBackground(state.cfg.BackgroundColor)
 
 	if len(state.end_state) == 0 {
-	block_colors := BLOCK_COLORS
 	i := 0
 	for b in state.blocks {
 		defer { i+= 1}
 		x := cast(i32)(b.x)
 		y := cast(i32)(b.y)
-		raylib.DrawRectangle(x, y, BLOCK_WIDTH, BLOCK_HEIGHT, block_colors[i%len(block_colors)])
+		raylib.DrawRectangle(x, y, state.cfg.BlockWidth, state.cfg.BlockHeight, state.cfg.BlockColors[i%len(state.cfg.BlockColors)])
 		// raylib.DrawText(fmt.ctprintf(), x, y, 20, raylib.WHITE)
 	}
 
-	raylib.DrawRectangle(cast(i32)state.padel_pos.x, cast(i32)state.padel_pos.y, PADEL_WIDTH, PADEL_HEIGHT, PADEL_COLOR)
+	raylib.DrawRectangle(cast(i32)state.padel_pos.x, cast(i32)state.padel_pos.y, state.cfg.PadelWidth, state.cfg.PadelHeight, state.cfg.PadelColor)
 
-	raylib.DrawCircle(cast(i32)state.ball.pos.x, cast(i32)state.ball.pos.y, BALL_RADIUS, BALL_COLOR)
+	raylib.DrawCircle(cast(i32)state.ball.pos.x, cast(i32)state.ball.pos.y, f32(state.cfg.BallRadius), state.cfg.BallColor)
 	} else {
 		font_size :i32 = 20
 		msg := fmt.ctprintf("%s", state.end_state)
-		center_text(msg, SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2, font_size, raylib.WHITE)
+		center_text(msg, state.cfg.ScreenWidth / 2, state.cfg.ScreenHeight / 2, font_size, raylib.WHITE)
 		msg = fmt.ctprintf("Press R to restart")
-		center_text(msg, SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2 + font_size + 5, font_size -5, raylib.WHITE)
+		center_text(msg, state.cfg.ScreenWidth / 2, state.cfg.ScreenHeight / 2 + font_size + 5, font_size -5, raylib.WHITE)
 	}
 }
 
