@@ -8,11 +8,11 @@ Transform :: struct {
 	velocity: Vec2
 }
 
-// movement :: proc(transforms: []^Transform, dt: f32) {
-// 	for t in transforms {
-// 		t.position += t.velocity * dt
-// 	}
-// }
+movement :: proc(transforms: []^Transform, dt: f32) {
+	for t in transforms {
+		t.position += t.velocity * dt
+	}
+}
 
 RectangleRender :: struct {
 	dimensions: Vec2,

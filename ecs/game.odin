@@ -38,16 +38,17 @@ main :: proc() {
 
 			// Gather input and update state
 			// update(&state, f32(frame_start - lastFrameStart) / f32(sec_in_ns))
-			// trans := ecs.query_1(store, ^Transform)
-			// movement(trans, f32(frame_start - lastFrameStart) / f32(sec_in_ns))
+			trans := ecs.query_1(store, ^Transform)
+			movement(trans, f32(frame_start - lastFrameStart) / f32(sec_in_ns))
 
 			// Render game
 			// render(&state)
+			raylib.ClearBackground(cfg.BackgroundColor)
 			rects := ecs.query_2(store, ^RectangleRender, ^Transform)
 			rectangle_renderer(rects)
 
-			// circs := ecs.query_2(store, ^CircleRender, ^Transform)
-			// circle_renderer(circs)
+			circs := ecs.query_2(store, ^CircleRender, ^Transform)
+			circle_renderer(circs)
 
 			lastFrameStart = time.now()._nsec
 			time.sleep(cast(time.Duration)(max_frame_duration -(lastFrameStart - frame_start)))
