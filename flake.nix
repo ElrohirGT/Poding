@@ -22,6 +22,7 @@
         packages = [
           pkgs.odin
           pkgs.raylib
+          pkgs.xc
         ];
       };
     });

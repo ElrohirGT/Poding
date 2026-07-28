@@ -19,7 +19,7 @@ GameConfig :: struct {
 	PadelColor: raylib.Color,
 	PadelVelocity: i32,
 
-	BallRadius: i32,
+	BallRadius: f32,
 	BallColor: raylib.Color,
 }
 

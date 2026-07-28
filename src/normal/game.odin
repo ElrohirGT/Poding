@@ -64,7 +64,7 @@ block_collision_scene :: proc(cfg: ^GameConfig) -> GameState {
 		blocks = slice.clone(blocks),
 		padel_pos = {f32(cfg.ScreenWidth / 2 - cfg.PadelWidth / 2), f32(cfg.ScreenHeight) * 0.9}
 	}
-	state.ball.pos = Vec2{f32(150 + cfg.BlockWidth + cfg.BallRadius + 50), 150+f32(cfg.BlockHeight) / 2}
+	state.ball.pos = Vec2{150.0 + f32(cfg.BlockWidth) + cfg.BallRadius + 50.0, 150+f32(cfg.BlockHeight) / 2}
 	// state.ball.vel = Vec2{-75, 0}
 	state.ball.vel = Vec2{0, -75}
 	state.cfg = cfg
