@@ -18,6 +18,7 @@ main :: proc() {
 	ecs.register_component(store, ^Transform)
 	ecs.register_component(store, ^RectangleRender)
 	ecs.register_component(store, ^CircleRender)
+	ecs.register_component(store, ^SquareCollider)
 
 	block_collision_scene(cfg, store)
 	// state := block_collision_scene(cfg)
@@ -38,6 +39,9 @@ main :: proc() {
 
 			// Gather input and update state
 			// update(&state, f32(frame_start - lastFrameStart) / f32(sec_in_ns))
+			colls := ecs.query_2(store, ^SquareCollider, ^Transform)
+			check_collisions(colls)
+
 			trans := ecs.query_1(store, ^Transform)
 			movement(trans, f32(frame_start - lastFrameStart) / f32(sec_in_ns))
 

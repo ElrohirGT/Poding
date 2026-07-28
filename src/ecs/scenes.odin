@@ -1,5 +1,6 @@
 package main
 
+import "core:math"
 import "core:fmt"
 import "ecs"
 
@@ -13,19 +14,23 @@ block_collision_scene :: proc(cfg: ^GameConfig, store: ^ecs.Store) {
 
 	// Blocks
 	for b,idx in blocks {
+		dimensions := Vec2{f32(cfg.BlockWidth), f32(cfg.BlockHeight)}
 		ecs.spawn_with(store, []any{
 			ecs.new_comp(Transform{
 				position = b,
 				velocity = Vec2{0,0},
 			}),
 			ecs.new_comp(RectangleRender{
-				dimensions = Vec2{f32(cfg.BlockWidth), f32(cfg.BlockHeight)},
+				dimensions = dimensions,
 				color = cfg.BlockColors[idx % len(cfg.BlockColors)],
+			}),
+			ecs.new_comp(SquareCollider{
+				id = uint(idx),
+				static = true,
+				dimensions = dimensions,
 			})
 		})
 	}
-
-	fmt.printfln("ST1:\n\t%#v", store)
 
 	// Padel
 	ecs.spawn_with(store, []any {
@@ -37,21 +42,24 @@ block_collision_scene :: proc(cfg: ^GameConfig, store: ^ecs.Store) {
 			color = cfg.PadelColor,
 		})
 	})
-	fmt.printfln("ST2:\n%#v", store)
 
 	// Ball
 	ecs.spawn_with(store, []any {
-		ecs.new_comp(ecs.Tag("Ball")),
 		ecs.new_comp(Transform{
 			position = Vec2{150.0 + f32(cfg.BlockWidth) + cfg.BallRadius + 50.0, 150+f32(cfg.BlockHeight) / 2},
 			velocity = Vec2{0, -75},
 		}),
 		ecs.new_comp(CircleRender{
+			offset = Vec2{math.sin(math.PI / f32(4)) * cfg.BallRadius, -math.cos(math.PI/f32(4))*cfg.BallRadius},
 			radius = cfg.BallRadius,
 			color = cfg.BallColor,
+		}),
+		ecs.new_comp(SquareCollider{
+			id = 10,
+			static = false,
+			dimensions = Vec2{cfg.BallRadius*2, cfg.BallRadius*2}
 		})
 	})
-	fmt.printfln("ST3:\n%#v", store)
 }
 
 
