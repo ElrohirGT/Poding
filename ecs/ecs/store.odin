@@ -14,6 +14,7 @@ init_store :: proc(init_components: int) -> ^Store {
 	return st
 }
 
+// FIXME: Currently leaking memory :"(
 deinit_store :: proc(st: ^Store) {
 	delete(st^)
 	free(st)
@@ -89,33 +90,41 @@ query_2 :: proc(st: ^Store, $CT1: typeid, $CT2: typeid) -> []struct{ct1: CT1, ct
 test_main :: proc(t: ^testing.T) {
 	store := init_store(5)
 	defer deinit_store(store)
+	defer free_all(context.temp_allocator)	// Free all temporary allocations done by
+																					// store queries
 
 	MovementComponent :: struct {
 		x: f32,
 		y: f32,
 	}
+	register_component(store, ^MovementComponent)
 
 	VelocityComponent :: struct {
 		x: f32,
 		y: f32,
 	}
+	register_component(store, ^VelocityComponent)
 
-	register_component(store, MovementComponent)
-	register_component(store, VelocityComponent)
-	entidy_id := spawn_with(store, []any{MovementComponent{0,5}, VelocityComponent{0,0}})
+	entidy_id := spawn_with(store, []any{
+		new_comp(MovementComponent{0,5}),
+		new_comp(VelocityComponent{0,0}),
+	})
 	testing.expect(t, 0 == entidy_id, fmt.aprintfln("%d != 0\n%#v", entidy_id, store, allocator=context.temp_allocator))
-	entidy_id = spawn_with(store, []any{MovementComponent{0,5}, VelocityComponent{5,4}})
+	entidy_id = spawn_with(store, []any{
+		new_comp(MovementComponent{0,5}),
+		new_comp(VelocityComponent{5,4}),
+	})
 	testing.expect(t, 1 == entidy_id, fmt.aprintfln("%d != 0\n%#v", entidy_id, store, allocator=context.temp_allocator))
-	entidy_id = spawn_with(store, []any{MovementComponent{0,5}})
+	entidy_id = spawn_with(store, []any{
+		new_comp(MovementComponent{0,5}),
+	})
 	testing.expect(t, 2 == entidy_id, fmt.aprintfln("%d != 0\n%#v", entidy_id, store, allocator=context.temp_allocator))
 
-	cmps := query_1(store, MovementComponent)
-	defer delete(cmps)
+	cmps := query_1(store, ^MovementComponent)
 
 	testing.expect(t, 3 == len(cmps), fmt.aprintfln("%d != 3\n%#v",  len(cmps), store, allocator=context.temp_allocator))
 
-	entities := query_2(store, VelocityComponent, MovementComponent)
-	defer delete(entities)
+	entities := query_2(store, ^VelocityComponent, ^MovementComponent)
 	testing.expect(t, 2 == len(entities), fmt.aprintfln("%d != 2\n%#v", len(entities), store, allocator=context.temp_allocator))
 
 	ent := entities[1]
