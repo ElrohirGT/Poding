@@ -8,6 +8,10 @@ Transform :: struct {
 	velocity: Vec2
 }
 
+collisions :: proc(transforms: []^Transform) {
+
+}
+
 movement :: proc(transforms: []^Transform, dt: f32) {
 	for t in transforms {
 		t.position += t.velocity * dt

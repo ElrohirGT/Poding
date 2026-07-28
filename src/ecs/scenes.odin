@@ -31,7 +31,11 @@ block_collision_scene :: proc(cfg: ^GameConfig, store: ^ecs.Store) {
 	ecs.spawn_with(store, []any {
 		ecs.new_comp(Transform{
 			position = Vec2{f32(cfg.ScreenWidth / 2 - cfg.PadelWidth / 2), f32(cfg.ScreenHeight) * 0.9}
-			})
+		}),
+		ecs.new_comp(RectangleRender{
+			dimensions = Vec2{f32(cfg.PadelWidth), f32(cfg.PadelHeight)},
+			color = cfg.PadelColor,
+		})
 	})
 	fmt.printfln("ST2:\n%#v", store)
 
