@@ -110,4 +110,10 @@ test_main :: proc(t: ^testing.T) {
 	entities := query_2(store, VelocityComponent, MovementComponent)
 	defer delete(entities)
 	testing.expect(t, 2 == len(entities), fmt.aprintfln("%d != 2\n%#v", len(entities), store, allocator=context.temp_allocator))
+
+	ent := entities[1]
+	a := ent.ct1.x
+	testing.expect_value(t, a, 5)
+	b := ent.ct1.y
+	testing.expect_value(t, b, 4)
 }
