@@ -15,9 +15,9 @@ main :: proc() {
 	store := ecs.init_store(5)
 	defer ecs.deinit_store(store)
 
-	ecs.register_component(store, Transform)
-	ecs.register_component(store, RectangleRender)
-	ecs.register_component(store, CircleRender)
+	ecs.register_component(store, ^Transform)
+	ecs.register_component(store, ^RectangleRender)
+	ecs.register_component(store, ^CircleRender)
 
 	block_collision_scene(cfg, store)
 	// state := block_collision_scene(cfg)
@@ -34,24 +34,20 @@ main :: proc() {
 			frame_start := time.now()._nsec
 			raylib.BeginDrawing()
 			defer raylib.EndDrawing()
-
-			rects := ecs.query_1(store, RectangleRender)
-			defer delete(rects)
-			for &rect in rects {
-				rectangle_renderer(&rect)
-			}
-
-			circs := ecs.query_1(store, CircleRender)
-			defer delete(circs)
-			for &circ in circs {
-				circle_renderer(&circ)
-			}
+			defer free_all(context.temp_allocator)
 
 			// Gather input and update state
 			// update(&state, f32(frame_start - lastFrameStart) / f32(sec_in_ns))
+			// trans := ecs.query_1(store, ^Transform)
+			// movement(trans, f32(frame_start - lastFrameStart) / f32(sec_in_ns))
 
 			// Render game
 			// render(&state)
+			rects := ecs.query_2(store, ^RectangleRender, ^Transform)
+			rectangle_renderer(rects)
+
+			// circs := ecs.query_2(store, ^CircleRender, ^Transform)
+			// circle_renderer(circs)
 
 			lastFrameStart = time.now()._nsec
 			time.sleep(cast(time.Duration)(max_frame_duration -(lastFrameStart - frame_start)))

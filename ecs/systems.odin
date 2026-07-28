@@ -8,23 +8,36 @@ Transform :: struct {
 	velocity: Vec2
 }
 
+// movement :: proc(transforms: []^Transform, dt: f32) {
+// 	for t in transforms {
+// 		t.position += t.velocity * dt
+// 	}
+// }
+
 RectangleRender :: struct {
-	top_left: Vec2,
 	dimensions: Vec2,
 	color: raylib.Color,
 }
 
 
-rectangle_renderer :: proc(cps: ^RectangleRender) {
-	raylib.DrawRectangle(i32(cps.top_left.x), i32(cps.top_left.y), i32(cps.dimensions.x), i32(cps.dimensions.y), cps.color)
+rectangle_renderer :: proc(cps: []struct{ct1: ^RectangleRender, ct2: ^Transform}) {
+	for cp in cps {
+		transform := cp.ct2
+		render := cp.ct1
+		raylib.DrawRectangle(i32(transform.position.x), i32(transform.position.y), i32(render.dimensions.x), i32(render.dimensions.y), render.color)
+	}
 }
 
 CircleRender :: struct {
-	center: Vec2,
 	radius: f32,
 	color: raylib.Color,
 }
 
-circle_renderer :: proc(cps: ^CircleRender) {
-	raylib.DrawCircle(i32(cps.center.x), i32(cps.center.y), cps.radius, cps.color)
+// circle_renderer :: proc(transform: ^Transform, render: ^CircleRender) {
+circle_renderer :: proc(cps: []struct{ct1: ^CircleRender, ct2: ^Transform}) {
+	for cp in cps {
+		transform := cp.ct2
+		render := cp.ct1
+		raylib.DrawCircle(i32(transform.position.x), i32(transform.position.y), render.radius, render.color)
+	}
 }

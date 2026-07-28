@@ -10,7 +10,7 @@ Tag :: string
 
 init_store :: proc(init_components: int) -> ^Store {
 	st := new(Store)
-	register_component(st, Tag)
+	register_component(st, ^Tag)
 	return st
 }
 
@@ -48,7 +48,7 @@ spawn_with :: proc(st: ^Store, components: []any) -> EntityId {
 }
 
 query_1 :: proc(st: ^Store, $CT1: typeid) -> []CT1 {
-	result := make([dynamic]CT1, 0, len(st[CT1]))
+	result := make([dynamic]CT1, 0, len(st[CT1]), context.temp_allocator)
 	for component_value, idx in st[CT1] {
 		if component_value != nil {
 			append(&result, component_value.(CT1))
@@ -60,18 +60,25 @@ query_1 :: proc(st: ^Store, $CT1: typeid) -> []CT1 {
 query_2 :: proc(st: ^Store, $CT1: typeid, $CT2: typeid) -> []struct{ct1: CT1, ct2: CT2} {
 	st1, found := st[CT1]
 	if !found {
-		return []struct{ct1: CT1, ct2: CT2}{}
+		return nil
 	}
 
-	result := make([dynamic]struct{ct1: CT1, ct2: CT2}, 0, len(st[CT1]))
+	result := make([dynamic]struct{ct1: CT1, ct2: CT2}, 0, len(st[CT1]), context.temp_allocator)
 	for cp1, entity_id in st1 {
+		if cp1 == nil {
+			continue
+		}
+
 		st2, found := st[CT2]
 		if !found {
 			continue
 		}
 		cp2 := st2[entity_id]
 		if cp2 != nil && cp1 != nil {
-			append(&result, struct{ct1: CT1, ct2: CT2}{ct1 = cp1.(CT1), ct2 = cp2.(CT2)})
+			append(&result, struct{ct1: CT1, ct2: CT2}{
+				ct1 = cp1.(CT1),
+				ct2 = cp2.(CT2)
+			})
 		}
 	}
 	return result[:]
