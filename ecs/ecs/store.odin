@@ -1,16 +1,16 @@
 package ecs
 
 import "core:fmt"
-import "core:strings"
-import "core:log"
 import "core:testing"
 
 EntityId :: int
 
 Store :: map[typeid][dynamic]any
+Tag :: string
 
 init_store :: proc(init_components: int) -> ^Store {
 	st := new(Store)
+	register_component(st, Tag)
 	return st
 }
 

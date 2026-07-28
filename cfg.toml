@@ -17,5 +17,5 @@ PadelHeight = 25
 PadelColor = [230, 230, 230, 255]
 PadelVelocity = 175
 
-BallRadius = 10
+BallRadius = 10.0
 BallColor = [230, 230, 230, 255]
