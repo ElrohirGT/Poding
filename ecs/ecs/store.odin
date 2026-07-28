@@ -7,7 +7,6 @@ import "core:testing"
 
 EntityId :: int
 
-
 Store :: map[typeid][dynamic]any
 
 init_store :: proc(init_components: int) -> ^Store {
@@ -27,26 +26,24 @@ register_component :: proc(st: ^Store, $ComponentId: typeid) {
 
 spawn_with :: proc(st: ^Store, components: []any) -> EntityId {
 	entity_id := 0
-	for comp in components {
-		for comp_id, components in st {
-			if entity_id == 0 {
-				entity_id = len(components)
-			} 
-			assert(entity_id == len(components))
+	for comp_id, cmps in st {
+		if entity_id == 0 {
+			entity_id = len(cmps)
+		}
 
-			value: any
+		value: any
+		for comp in components {
 			if comp_id == comp.id {
 				value = comp
+				break
 			}
-
-			collection, found := st[comp.id]
-			if !found {
-				collection = make([dynamic]any, len(components), len(components)+1)
-			}
-			append(&collection, comp)
-			st^[comp.id] = collection
 		}
+
+		collection := st[comp_id]
+		append(&collection, value)
+		st^[comp_id] = collection
 	}
+
 	return entity_id
 }
 
@@ -63,12 +60,21 @@ query_1 :: proc(st: ^Store, $CT1: typeid) -> []CT1 {
 query_2 :: proc(st: ^Store, $CT1: typeid, $CT2: typeid) -> []struct{ct1: CT1, ct2: CT2} {
 	st1, found := st[CT1]
 	if !found {
-		return []struct{ct1: CT1, ct2: CT2}
+		return []struct{ct1: CT1, ct2: CT2}{}
 	}
 
+	result := make([dynamic]struct{ct1: CT1, ct2: CT2}, 0, len(st[CT1]))
 	for cp1, entity_id in st1 {
-
+		st2, found := st[CT2]
+		if !found {
+			continue
+		}
+		cp2 := st2[entity_id]
+		if cp2 != nil && cp1 != nil {
+			append(&result, struct{ct1: CT1, ct2: CT2}{ct1 = cp1.(CT1), ct2 = cp2.(CT2)})
+		}
 	}
+	return result[:]
 }
 
 
@@ -82,13 +88,26 @@ test_main :: proc(t: ^testing.T) {
 		y: f32,
 	}
 
+	VelocityComponent :: struct {
+		x: f32,
+		y: f32,
+	}
+
 	register_component(store, MovementComponent)
-	entidy_id := spawn_with(store, []any{MovementComponent{0,5}})
+	register_component(store, VelocityComponent)
+	entidy_id := spawn_with(store, []any{MovementComponent{0,5}, VelocityComponent{0,0}})
+	testing.expect(t, 0 == entidy_id, fmt.aprintfln("%d != 0\n%#v", entidy_id, store, allocator=context.temp_allocator))
+	entidy_id = spawn_with(store, []any{MovementComponent{0,5}, VelocityComponent{5,4}})
+	testing.expect(t, 1 == entidy_id, fmt.aprintfln("%d != 0\n%#v", entidy_id, store, allocator=context.temp_allocator))
 	entidy_id = spawn_with(store, []any{MovementComponent{0,5}})
-	entidy_id = spawn_with(store, []any{MovementComponent{0,5}})
+	testing.expect(t, 2 == entidy_id, fmt.aprintfln("%d != 0\n%#v", entidy_id, store, allocator=context.temp_allocator))
 
 	cmps := query_1(store, MovementComponent)
 	defer delete(cmps)
 
 	testing.expect(t, 3 == len(cmps), fmt.aprintfln("%d != 3\n%#v",  len(cmps), store, allocator=context.temp_allocator))
+
+	entities := query_2(store, VelocityComponent, MovementComponent)
+	defer delete(entities)
+	testing.expect(t, 2 == len(entities), fmt.aprintfln("%d != 2\n%#v", len(entities), store, allocator=context.temp_allocator))
 }
