@@ -60,5 +60,7 @@ dbg_collisions :: proc(ctx: ^microui.Context, entities: []struct{ct1: ^SquareCol
 }
 
 draw_debug_circle :: proc(pos: Vec2) {
-	raylib.DrawCircle(i32(pos.x), i32(pos.y), 4, raylib.PINK)
+	color := raylib.PINK
+	color[3] = 50
+	raylib.DrawCircle(i32(pos.x), i32(pos.y), 5, color)
 }

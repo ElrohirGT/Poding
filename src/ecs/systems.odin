@@ -207,3 +207,27 @@ is_touching_block :: proc(ctx: ^microui.Context, ent1: struct{ct1: ^SquareCollid
 	}
 
 }
+
+PadelMovement :: struct {
+	LeftKey: raylib.KeyboardKey,
+	RightKey: raylib.KeyboardKey,
+	Speed: f32
+}
+
+apply_padel_movement :: proc(entities: []struct{ct1: ^PadelMovement, ct2: ^Transform}) {
+	for ent in entities {
+		speed := ent.ct1.Speed
+		left := raylib.IsKeyDown(ent.ct1.LeftKey)
+		right := raylib.IsKeyDown(ent.ct1.RightKey)
+
+		if left {
+			ent.ct2.velocity.x = -speed
+		}
+		if right {
+			ent.ct2.velocity.x = speed
+		}
+		if !left && !right {
+			ent.ct2.velocity.x = 0
+		}
+	}
+}

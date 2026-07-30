@@ -44,8 +44,10 @@ main :: proc() {
 	ecs.register_component(store, ^RectangleRender)
 	ecs.register_component(store, ^CircleRender)
 	ecs.register_component(store, ^SquareCollider)
+	ecs.register_component(store, ^PadelMovement)
 
-	block_collision_scene(cfg, store)
+	// block_collision_scene(cfg, store)
+	padel_collision_scene(cfg, store)
 	// state := block_collision_scene(cfg)
 	// state := padel_collision_scene(cfg)
 	// state := generate_default_scene(cfg)
@@ -151,6 +153,7 @@ render :: proc(store: ^ecs.Store, cfg: ^GameConfig) {
 
 systems :: proc(ctx: ^microui.Context, store: ^ecs.Store, dt: f32) {
 	reset_collisions(ecs.query_1(store, ^SquareCollider))
+	apply_padel_movement(ecs.query_2(store, ^PadelMovement, ^Transform))
 
 	colls := ecs.query_2(store, ^SquareCollider, ^Transform)
 	check_collisions(colls)
