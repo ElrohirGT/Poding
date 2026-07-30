@@ -122,22 +122,6 @@ between :: proc(minimum, n, maximum: f32) -> bool {
 	return minimum < n && maximum > n
 }
 
-is_left :: proc(a,b: f32) -> bool {
-	return a <= b
-}
-
-is_right :: proc(a,b: f32) -> bool {
-	return a >= b
-}
-
-is_top :: proc(a,b: f32) -> bool {
-	return a <= b
-}
-
-is_bottom :: proc(a,b: f32) -> bool {
-	return a >= b
-}
-
 get_cross :: proc(top_left, dim: Vec2) -> (left: Vec2, top: Vec2, right: Vec2, bottom: Vec2) {
 	top = top_left
 	top.x += dim.x / 2

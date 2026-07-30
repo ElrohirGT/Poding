@@ -56,7 +56,7 @@ block_collision_scene :: proc(cfg: ^GameConfig, store: ^ecs.Store) {
 	ecs.spawn_with(store, []any {
 		ecs.new_comp(Transform{
 			position = Vec2{150.0 + f32(cfg.BlockWidth) + cfg.BallRadius + 50.0, 150+f32(cfg.BlockHeight) / 2},
-			velocity = Vec2{0, 75},
+			velocity = Vec2{70, 45},
 		}),
 		ecs.new_comp(CircleRender{
 			offset = Vec2{cfg.BallRadius, cfg.BallRadius},
