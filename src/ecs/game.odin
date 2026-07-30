@@ -155,6 +155,7 @@ systems :: proc(ctx: ^microui.Context, store: ^ecs.Store, dt: f32) {
 	colls := ecs.query_2(store, ^SquareCollider, ^Transform)
 	check_collisions(colls)
 	bounce_ball(colls)
+	drop_block(colls, store)
 
 	trans := ecs.query_1(store, ^Transform)
 	movement(trans, dt)

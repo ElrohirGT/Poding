@@ -27,6 +27,7 @@ block_collision_scene :: proc(cfg: ^GameConfig, store: ^ecs.Store) {
 			}),
 			ecs.new_comp(SquareCollider{
 				id = collider_id,
+				tag = "Block",
 				static = true,
 				dimensions = dimensions,
 			})

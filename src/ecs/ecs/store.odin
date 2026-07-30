@@ -46,6 +46,12 @@ spawn_with :: proc(st: ^Store, components: []any) -> EntityId {
 	return entity_id
 }
 
+remove_entity :: proc(st: ^Store, id: uint) {
+	for t_id, &components in st {
+		unordered_remove(&components, id)
+	}
+}
+
 query_1 :: proc(st: ^Store, $CT1: typeid) -> []CT1 {
 	result := make([dynamic]CT1, 0, len(st[CT1]), context.temp_allocator)
 	for component_value, idx in st[CT1] {

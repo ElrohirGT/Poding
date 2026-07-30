@@ -1,5 +1,6 @@
 package main
 
+import "ecs"
 import "vendor:raylib"
 import "vendor:microui"
 
@@ -76,6 +77,8 @@ check_collisions :: proc(entities: []struct{ct1: ^SquareCollider, ct2: ^Transfor
 			ent.ct1.collision_direction = is_touching_block(nil, ent, other)
 			if ent.ct1.collision_direction != .NO_TOUCH {
 				ent.ct1.collision_with = other.ct1.id
+				other.ct1.collision_with = ent.ct1.id
+				other.ct1.collision_direction = inverse_of(ent.ct1.collision_direction)
 				break
 			}
 		}
@@ -110,12 +113,41 @@ bounce_ball :: proc(entities: []struct{ct1: ^SquareCollider, ct2: ^Transform}) {
 	}
 }
 
+drop_block :: proc(entities: []struct{ct1: ^SquareCollider, ct2: ^Transform}, store: ^ecs.Store) {
+	if !frame {
+		return 
+	}
+
+	for ent in entities {
+		if ent.ct1.tag != "Block" || ent.ct1.collision_direction == .NO_TOUCH {
+			continue
+		}
+
+		ecs.remove_entity(store, ent.ct1.id-1)
+	}
+}
+
 CollisionDirection :: enum {
 	NO_TOUCH,
 	TOP,
 	RIGHT,
 	LEFT,
 	BOTTOM
+}
+
+inverse_of :: proc(cd: CollisionDirection) -> CollisionDirection {
+	#partial switch(cd) {
+	case .TOP:
+		return .BOTTOM
+	case .BOTTOM:
+		return .TOP
+	case .LEFT:
+		return .RIGHT
+	case .RIGHT:
+		return .LEFT
+	case:
+		return .NO_TOUCH
+	}
 }
 
 between :: proc(minimum, n, maximum: f32) -> bool {
