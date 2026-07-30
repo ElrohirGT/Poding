@@ -136,6 +136,7 @@ bounce_ball :: proc(entities: []struct{ct1: ^SquareCollider, ct2: ^Transform}) {
 	}
 }
 
+
 drop_block :: proc(entities: []struct{ct1: ^SquareCollider, ct2: ^Transform}, store: ^ecs.Store) {
 	if !frame {
 		return 
@@ -253,4 +254,28 @@ apply_padel_movement :: proc(entities: []struct{ct1: ^PadelMovement, ct2: ^Trans
 			ent.ct2.velocity.x = 0
 		}
 	}
+}
+
+EndGame :: struct {
+	state: string,
+	bottom_id: uint
+}
+
+check_end_game :: proc(entities: []^SquareCollider, end_game: ^EndGame) -> bool {
+	count := 0
+	for c in entities {
+		if c.tag == "Block" {
+			count+=1
+		}
+		if c.tag == "Ball" && c.collision_with == end_game.bottom_id {
+			end_game.state = "You Lose!"
+		}
+	}
+
+	won := count == 0 && end_game.state == ""
+	if won {
+		end_game.state = "You Win!"
+	}
+
+	return won
 }

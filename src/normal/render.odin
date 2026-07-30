@@ -8,18 +8,18 @@ render :: proc(state: ^GameState) {
 	raylib.ClearBackground(state.cfg.BackgroundColor)
 
 	if len(state.end_state) == 0 {
-	i := 0
-	for b in state.blocks {
-		defer { i+= 1}
-		x := cast(i32)(b.x)
-		y := cast(i32)(b.y)
-		raylib.DrawRectangle(x, y, state.cfg.BlockWidth, state.cfg.BlockHeight, state.cfg.BlockColors[i%len(state.cfg.BlockColors)])
-		// raylib.DrawText(fmt.ctprintf(), x, y, 20, raylib.WHITE)
-	}
+		i := 0
+		for b in state.blocks {
+			defer { i+= 1}
+			x := cast(i32)(b.x)
+			y := cast(i32)(b.y)
+			raylib.DrawRectangle(x, y, state.cfg.BlockWidth, state.cfg.BlockHeight, state.cfg.BlockColors[i%len(state.cfg.BlockColors)])
+			// raylib.DrawText(fmt.ctprintf(), x, y, 20, raylib.WHITE)
+		}
 
-	raylib.DrawRectangle(cast(i32)state.padel_pos.x, cast(i32)state.padel_pos.y, state.cfg.PadelWidth, state.cfg.PadelHeight, state.cfg.PadelColor)
+		raylib.DrawRectangle(cast(i32)state.padel_pos.x, cast(i32)state.padel_pos.y, state.cfg.PadelWidth, state.cfg.PadelHeight, state.cfg.PadelColor)
 
-	raylib.DrawCircle(cast(i32)state.ball.pos.x, cast(i32)state.ball.pos.y, f32(state.cfg.BallRadius), state.cfg.BallColor)
+		raylib.DrawCircle(cast(i32)state.ball.pos.x, cast(i32)state.ball.pos.y, f32(state.cfg.BallRadius), state.cfg.BallColor)
 	} else {
 		font_size :i32 = 20
 		msg := fmt.ctprintf("%s", state.end_state)
@@ -30,8 +30,8 @@ render :: proc(state: ^GameState) {
 }
 
 center_text :: proc(msg: cstring, x, y, font_size: c.int, color: raylib.Color) {
-		text_width := raylib.MeasureText(msg, font_size)
-		raylib.DrawText(msg, x - text_width / 2, y - font_size / 2, font_size, raylib.WHITE)
+	text_width := raylib.MeasureText(msg, font_size)
+	raylib.DrawText(msg, x - text_width / 2, y - font_size / 2, font_size, raylib.WHITE)
 }
 
 

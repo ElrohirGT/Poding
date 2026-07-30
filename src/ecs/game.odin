@@ -45,6 +45,7 @@ main :: proc() {
 	ecs.register_component(store, ^CircleRender)
 	ecs.register_component(store, ^SquareCollider)
 	ecs.register_component(store, ^PadelMovement)
+	ecs.register_component(store, ^EndGame)
 
 	// block_collision_scene(cfg, store)
 	// padel_collision_scene(cfg, store)
@@ -62,6 +63,7 @@ main :: proc() {
 			defer raylib.EndDrawing()
 			defer free_all(context.temp_allocator)
 			defer { frame = !enable_debug || false }
+			raylib.ClearBackground(cfg.BackgroundColor)
 
 			// Get user input
 			get_input(ctx)
@@ -70,15 +72,28 @@ main :: proc() {
 				microui.begin(ctx)
 				defer microui.end(ctx)
 
-				// Render game state
-				render(store, cfg)
+				colliders := ecs.query_1(store, ^SquareCollider)
+				end_games := ecs.query_1(store, ^EndGame)
+				end_game := end_games[0]
+				check_end_game(colliders, end_game)
 
-				// Update game state
-				systems(ctx, store, f32(frame_start - lastFrameStart) / f32(sec_in_ns))
+				if len(end_game.state) != 0 {
+					font_size :i32 = 20
+					msg := fmt.ctprintf("%s", end_game.state)
+					center_text(msg, cfg.ScreenWidth / 2, cfg.ScreenHeight / 2, font_size, raylib.WHITE)
+					// msg = fmt.ctprintf("Press R to restart")
+					// center_text(msg, state.cfg.ScreenWidth / 2, state.cfg.ScreenHeight / 2 + font_size + 5, font_size -5, raylib.WHITE)
+				} else {
+					// Render game state
+					render(store, cfg)
 
-				// Debug windows
-				if enable_debug {
-					debug_ui(ctx, store)
+					// Update game state
+					systems(ctx, store, f32(frame_start - lastFrameStart) / f32(sec_in_ns))
+
+					// Debug windows
+					if enable_debug {
+						debug_ui(ctx, store)
+					}
 				}
 			}
 
@@ -141,7 +156,6 @@ get_input :: proc(ctx: ^microui.Context) {
 }
 
 render :: proc(store: ^ecs.Store, cfg: ^GameConfig) {
-	raylib.ClearBackground(cfg.BackgroundColor)
 	rects := ecs.query_2(store, ^RectangleRender, ^Transform)
 	rectangle_renderer(rects)
 
@@ -194,4 +208,9 @@ render_ui :: proc(ctx: ^microui.Context) {
 				 raylib.DrawRectangle(rect.x, rect.y, rect.w, rect.h, raylib.Color{v.color.r, v.color.g, v.color.b, v.color.a})
 		}
 	}
+}
+
+center_text :: proc(msg: cstring, x, y, font_size: c.int, color: raylib.Color) {
+	text_width := raylib.MeasureText(msg, font_size)
+	raylib.DrawText(msg, x - text_width / 2, y - font_size / 2, font_size, raylib.WHITE)
 }

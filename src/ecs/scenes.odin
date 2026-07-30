@@ -242,6 +242,14 @@ generate_default_scene :: proc(cfg: ^GameConfig, store: ^ecs.Store) {
 			})
 		})
 	}
+
+	// EndGame
+	ecs.spawn_with(store, []any{
+		ecs.new_comp(EndGame{
+			state = "",
+			bottom_id = collider_id
+		})
+	})
 }
 
 generate_blocks :: proc(cfg: ^GameConfig, rows, cells, left_margin, top_margin, horizontal_gap, vertical_gap: int) -> []Vec2 {
