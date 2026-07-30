@@ -47,10 +47,8 @@ main :: proc() {
 	ecs.register_component(store, ^PadelMovement)
 
 	// block_collision_scene(cfg, store)
-	padel_collision_scene(cfg, store)
-	// state := block_collision_scene(cfg)
-	// state := padel_collision_scene(cfg)
-	// state := generate_default_scene(cfg)
+	// padel_collision_scene(cfg, store)
+	generate_default_scene(cfg, store)
 
 	fmt.printfln("STORE:\n%#v", store)
 

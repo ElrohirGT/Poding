@@ -56,7 +56,8 @@ SquareCollider :: struct {
 	static: bool,
 	dimensions: Vec2,
 	collision_direction: CollisionDirection,
-	collision_with: uint
+	collision_with: uint,
+	collision_tag: string
 }
 
 check_collisions :: proc(entities: []struct{ct1: ^SquareCollider, ct2: ^Transform}) {
@@ -77,8 +78,11 @@ check_collisions :: proc(entities: []struct{ct1: ^SquareCollider, ct2: ^Transfor
 			ent.ct1.collision_direction = is_touching_block(nil, ent, other)
 			if ent.ct1.collision_direction != .NO_TOUCH {
 				ent.ct1.collision_with = other.ct1.id
+				ent.ct1.collision_tag = other.ct1.tag
+
 				other.ct1.collision_with = ent.ct1.id
 				other.ct1.collision_direction = inverse_of(ent.ct1.collision_direction)
+				other.ct1.collision_tag = ent.ct1.tag
 				break
 			}
 		}
@@ -89,6 +93,7 @@ reset_collisions :: proc(entities: []^SquareCollider) {
 	for ent in entities {
 		ent.collision_direction = .NO_TOUCH
 		ent.collision_with = 0
+		ent.collision_tag = ""
 	}
 }
 
@@ -97,7 +102,17 @@ bounce_ball :: proc(entities: []struct{ct1: ^SquareCollider, ct2: ^Transform}) {
 		return 
 	}
 
+	ball_ent : struct{ct1: ^SquareCollider, ct2: ^Transform}
+	padel_ent : struct{ct1: ^SquareCollider, ct2: ^Transform}
 	for ent in entities {
+		if ent.ct1.tag == "Padel" {
+			padel_ent = ent
+		}
+		if ent.ct1.tag != "Ball" {
+			continue
+		}
+		ball_ent = ent
+
 		switch (ent.ct1.collision_direction) {
 		case CollisionDirection.NO_TOUCH:
 			continue
@@ -110,6 +125,14 @@ bounce_ball :: proc(entities: []struct{ct1: ^SquareCollider, ct2: ^Transform}) {
 		case CollisionDirection.RIGHT:
 			ent.ct2.velocity.x *= -1
 		}
+
+		if ent.ct1.collision_tag == "Padel" {
+			ent.ct2.velocity *= 1.1
+		}
+	}
+
+	if ball_ent.ct1.collision_tag == "Padel" {
+		ball_ent.ct2.velocity.x += padel_ent.ct2.velocity.x
 	}
 }
 
