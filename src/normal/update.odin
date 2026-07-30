@@ -105,6 +105,10 @@ is_bottom :: proc(a,b: f32) -> bool {
 	return a >= b
 }
 
+between :: proc(minimum, n, maximum: f32) -> bool {
+	return n >= minimum && n <= maximum
+}
+
 is_ball_touching_block :: proc(cfg: ^GameConfig, ball_pos: Vec2, block_pos: Vec2, block_width, block_height: f32) -> BallTouching {
 	// debug_on(ball_pos.x - BALL_RADIUS, ball_pos.y)
 	// debug_on(block_pos.x + BLOCK_WIDTH, block_pos.y)

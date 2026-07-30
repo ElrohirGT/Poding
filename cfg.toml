@@ -1,5 +1,7 @@
-ScreenWidth = 800
-ScreenHeight = 400
+ScreenWidth = 1080
+ScreenHeight = 720
+# ScreenWidth = 800
+# ScreenHeight = 400
 FpsCap = 60
 
 BackgroundColor  = [74, 88, 89, 255]

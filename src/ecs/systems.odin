@@ -1,7 +1,7 @@
 package main
 
-import "core:math"
 import "vendor:raylib"
+import "vendor:microui"
 
 Vec2 :: [2]f32
 Transform :: struct {
@@ -10,6 +10,10 @@ Transform :: struct {
 }
 
 movement :: proc(transforms: []^Transform, dt: f32) {
+	if !frame {
+		return
+	}
+
 	for t in transforms {
 		t.position += t.velocity * dt
 	}
@@ -47,42 +51,66 @@ circle_renderer :: proc(cps: []struct{ct1: ^CircleRender, ct2: ^Transform}) {
 
 SquareCollider :: struct {
 	id: uint,
+	tag: string,
 	static: bool,
-	dimensions: Vec2
+	dimensions: Vec2,
+	collision_direction: CollisionDirection,
+	collision_with: uint
 }
 
 check_collisions :: proc(entities: []struct{ct1: ^SquareCollider, ct2: ^Transform}) {
-	non_static := make([dynamic]struct{ct1: ^SquareCollider, ct2: ^Transform}, 0, len(entities))
-	for ent1 in entities {
+	non_static := make([dynamic]int, 0, len(entities))
+	for ent1, idx in entities {
 		if !ent1.ct1.static {
-			append(&non_static, ent1)
+			append(&non_static, idx)
 		}
 	}
 
-	for ent in non_static {
+	for idx in non_static {
+		ent := entities[idx]
 		for other in entities {
 			if other.ct1.id == ent.ct1.id { // Avoid self collision
 				continue
 			}
 
-			touching := is_touching_block(ent, other)
-			switch (touching) {
-			case BallTouching.NO_TOUCH:
-				continue
-			case BallTouching.TOP:
-				fallthrough
-			case BallTouching.BOTTOM:
-				ent.ct2.velocity.y *= -1
-			case BallTouching.LEFT:
-				fallthrough
-			case BallTouching.RIGHT:
-				ent.ct2.velocity.x *= -1
+			ent.ct1.collision_direction = is_touching_block(nil, ent, other)
+			if ent.ct1.collision_direction != .NO_TOUCH {
+				ent.ct1.collision_with = other.ct1.id
+				break
 			}
 		}
 	}
 }
 
-BallTouching :: enum {
+reset_collisions :: proc(entities: []^SquareCollider) {
+	for ent in entities {
+		ent.collision_direction = .NO_TOUCH
+		ent.collision_with = 0
+	}
+}
+
+bounce_ball :: proc(entities: []struct{ct1: ^SquareCollider, ct2: ^Transform}) {
+	if !frame {
+		return 
+	}
+
+	for ent in entities {
+		switch (ent.ct1.collision_direction) {
+		case CollisionDirection.NO_TOUCH:
+			continue
+		case CollisionDirection.TOP:
+			fallthrough
+		case CollisionDirection.BOTTOM:
+			ent.ct2.velocity.y *= -1
+		case CollisionDirection.LEFT:
+			fallthrough
+		case CollisionDirection.RIGHT:
+			ent.ct2.velocity.x *= -1
+		}
+	}
+}
+
+CollisionDirection :: enum {
 	NO_TOUCH,
 	TOP,
 	RIGHT,
@@ -90,52 +118,76 @@ BallTouching :: enum {
 	BOTTOM
 }
 
-between :: proc(n, minimum, maximum: f32) -> bool {
-	return n >= minimum && n <= maximum
+between :: proc(minimum, n, maximum: f32) -> bool {
+	return minimum < n && maximum > n
 }
 
-is_touching_block :: proc(ent1: struct{ct1: ^SquareCollider, ct2: ^Transform}, ent2: struct{ct1: ^SquareCollider, ct2: ^Transform}) -> BallTouching {
+is_left :: proc(a,b: f32) -> bool {
+	return a <= b
+}
+
+is_right :: proc(a,b: f32) -> bool {
+	return a >= b
+}
+
+is_top :: proc(a,b: f32) -> bool {
+	return a <= b
+}
+
+is_bottom :: proc(a,b: f32) -> bool {
+	return a >= b
+}
+
+get_cross :: proc(top_left, dim: Vec2) -> (left: Vec2, top: Vec2, right: Vec2, bottom: Vec2) {
+	top = top_left
+	top.x += dim.x / 2
+
+	left = top_left
+	left.y += dim.y / 2
+
+	bottom = top_left + dim
+	bottom.x -= dim.x / 2
+
+	right = top_left + dim
+	right.y -= dim.y / 2
+	return 
+}
+
+is_colliding :: proc(point, other_pos, other_dim: Vec2) -> bool {
+	return between(other_pos.x, point.x, other_pos.x+other_dim.x) && between(other_pos.y, point.y, other_pos.y+other_dim.y)
+}
+
+is_touching_block :: proc(ctx: ^microui.Context, ent1: struct{ct1: ^SquareCollider, ct2: ^Transform}, ent2: struct{ct1: ^SquareCollider, ct2: ^Transform}) -> CollisionDirection {
 	// debug_on(ball_pos.x - BALL_RADIUS, ball_pos.y)
 	// debug_on(block_pos.x + BLOCK_WIDTH, block_pos.y)
 
 	ent1_top_left := ent1.ct2.position
 	ent1_dimensions := ent1.ct1.dimensions
+	ent1_left, ent1_top, ent1_right, ent1_bottom := get_cross(ent1_top_left, ent1_dimensions)
+	if enable_debug {
+		draw_debug_circle(ent1_left)
+		draw_debug_circle(ent1_top)
+		draw_debug_circle(ent1_right)
+		draw_debug_circle(ent1_bottom) 
+	}
 
 	ent2_top_left  := ent2.ct2.position
 	ent2_dimensions := ent2.ct1.dimensions
+	if enable_debug {
+		draw_debug_circle(ent2_top_left)
+		draw_debug_circle(ent2_top_left + ent2_dimensions)
+	}
 
-	diff := ent1_top_left - ent2_top_left
-
-	if between(diff.x, 0, ent2_dimensions.x) &&
-		(between(ent1_top_left.y, ent2_top_left.y, ent2_top_left.y+ent2_dimensions.y) || between(ent2_top_left.y, ent1_top_left.y, ent1_top_left.y+ent1_dimensions.y)) {
+	if (is_colliding(ent1_left, ent2_top_left, ent2_dimensions)) {
 		return .LEFT
-	}
-	if between(diff.y, 0, ent2_dimensions.y) &&
-	(between(ent1_top_left.x, ent2_top_left.x, ent2_top_left.x+ent2_dimensions.x) || between(ent2_top_left.x, ent1_top_left.x, ent1_top_left.x+ent1_dimensions.x)) {
-		return .BOTTOM
-	}
-
-	diff = ent2_top_left - ent1_top_left
-	if between(diff.x, 0, ent1_dimensions.x) &&
-		(between(ent1_top_left.y, ent2_top_left.y, ent2_top_left.y+ent2_dimensions.y) || between(ent2_top_left.y, ent1_top_left.y, ent1_top_left.y+ent1_dimensions.y)) {
+	} if (is_colliding(ent1_right, ent2_top_left, ent2_dimensions)) {
 		return .RIGHT
-	}
-	if between(diff.y, 0, ent1_dimensions.y) &&
-	(between(ent1_top_left.x, ent2_top_left.x, ent2_top_left.x+ent2_dimensions.x) || between(ent2_top_left.x, ent1_top_left.x, ent1_top_left.x+ent1_dimensions.x)) {
+	} if (is_colliding(ent1_top, ent2_top_left, ent2_dimensions)) {
 		return .TOP
+	} if (is_colliding(ent1_bottom, ent2_top_left, ent2_dimensions)) {
+		return .BOTTOM
+	} else {
+		return .NO_TOUCH
 	}
 
-	return .NO_TOUCH
-	
-	// if is_left(ball_pos.x - f32(cfg.BallRadius), block_pos.x + block_width) && is_right(ball_pos.x - f32(cfg.BallRadius), block_pos.x) && is_bottom(ball_pos.y, block_pos.y) && is_top(ball_pos.y, block_pos.y+block_height) {
-	// 	return .LEFT
-	// } if is_left(ball_pos.x + f32(cfg.BallRadius), block_pos.x + block_width) && is_right(ball_pos.x + f32(cfg.BallRadius), block_pos.x) && is_bottom(ball_pos.y, block_pos.y) && is_top(ball_pos.y, block_pos.y+block_height) {
-	// 	return .RIGHT
-	// } if is_left(ball_pos.x, block_pos.x + block_width) && is_right(ball_pos.x, block_pos.x) && is_bottom(ball_pos.y - f32(cfg.BallRadius), block_pos.y) && is_top(ball_pos.y - f32(cfg.BallRadius), block_pos.y+block_height) {
-	// 	return .TOP
-	// } if is_left(ball_pos.x, block_pos.x + block_width) && is_right(ball_pos.x, block_pos.x) && is_bottom(ball_pos.y + f32(cfg.BallRadius), block_pos.y) && is_top(ball_pos.y + f32(cfg.BallRadius), block_pos.y+block_height) {
-	// 	return .BOTTOM
-	// } else {
-	// 	return .NO_TOUCH
-	// }
 }
