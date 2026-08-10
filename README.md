@@ -1,5 +1,7 @@
 # Poding
 
+All variants are under it's respective directory inside `./src`.
+
 ## Tasks
 
 ### normal
