@@ -14,6 +14,16 @@ init_store :: proc(init_components: int) -> ^Store {
 
 // FIXME: Currently leaking memory :"(
 deinit_store :: proc(st: ^Store) {
+	for _, components in st {
+		for comp in components {
+			if comp != nil {
+				inner := (^rawptr)(comp.data)^ // read the pointer stored inside `box` (i.e. `ref`)
+				free(inner)                    // free the component payload from new_clone
+				free(comp.data)                // free the box itself
+			}
+		}
+		delete(components)
+	}
 	delete(st^)
 	free(st)
 }
