@@ -12,7 +12,6 @@ init_store :: proc(init_components: int) -> ^Store {
 	return st
 }
 
-// FIXME: Currently leaking memory :"(
 deinit_store :: proc(st: ^Store) {
 	for _, components in st {
 		for comp in components {
