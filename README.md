@@ -19,8 +19,8 @@ Compiles the game (in debug mode).
 
 ```bash
 cd ./src/game/
-FILE=$(nix-build cfg.nix --no-out-link)
-odin build -debug -out:game.bin . && ./game.bin "$FILE" &> out
+# FILE=$(nix-build cfg.nix --no-out-link)
+odin build -debug -out:game.bin . && ./game.bin &> out
 ```
 
 ### normal

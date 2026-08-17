@@ -7,10 +7,10 @@ GameConfig :: struct {
 	ScreenWidth: i32,
 	ScreenHeight: i32,
 	FpsCap: i32,
+	BackgroundColor: raylib.Color,
 
 	GameRectangle: [4]i32,
-
-	BackgroundColor: raylib.Color,
+	DebugRectangle: [4]i32,
 }
 
 parse_file :: proc(filename: string) -> ^GameConfig {

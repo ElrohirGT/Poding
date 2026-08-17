@@ -11,8 +11,8 @@ import "vendor:microui"
 
 FontSize :: 14
 
-enable_debug := false
-frame := true
+ENABLE_DEBUG := false
+FRAME := true
 
 text_width :: proc(font: microui.Font, str: string) -> i32 {
 	cstr, err := strings.clone_to_cstring(str)
@@ -27,19 +27,21 @@ text_height :: proc(font: microui.Font) -> i32 {
 }
 
 main :: proc() {
-	if len(os.args) < 2 {
-		panic("No configuration file supplied!")
-	}
-	cfg_filename := os.args[1]
-	cfg := parse_file(cfg_filename)
-	fmt.printfln("CFG: %#v", cfg)
+	// if len(os.args) < 2 {
+	// 	panic("No configuration file supplied!")
+	// }
+	// cfg_filename := os.args[1]
+	// cfg := parse_file(cfg_filename)
+	// fmt.printfln("CFG: %#v", cfg)
+
+	cfg := gen_cfg()
 
 	ctx := &microui.Context{}
 	microui.init(ctx)
 	ctx.text_width = text_width
 	ctx.text_height = text_height
 
-	raylib.InitWindow(cfg.ScreenWidth, cfg.ScreenHeight, "Main Window")
+	raylib.InitWindow(i32(cfg.ScreenWidth), i32(cfg.ScreenHeight), "Main Window")
 	defer raylib.CloseWindow()
 
 	store := ecs.init_store(5)
@@ -64,7 +66,7 @@ main :: proc() {
 			raylib.BeginDrawing()
 			defer raylib.EndDrawing()
 			defer free_all(context.temp_allocator)
-			defer { frame = !enable_debug || false }
+			defer { FRAME = !ENABLE_DEBUG || false }
 			raylib.ClearBackground(cfg.BackgroundColor)
 
 			// Get user input
@@ -74,8 +76,6 @@ main :: proc() {
 				microui.begin(ctx)
 				defer microui.end(ctx)
 			}
-
-			raylib.DrawRectangle(cfg.GameRectangle[0], cfg.GameRectangle[1], cfg.GameRectangle[2], cfg.GameRectangle[3], raylib.PINK)
 
 			render_microui(ctx)
 
@@ -127,11 +127,11 @@ get_input :: proc(ctx: ^microui.Context) {
 	}
 
 	if raylib.IsKeyPressed(.ENTER) {
-		enable_debug = !enable_debug
+		ENABLE_DEBUG = !ENABLE_DEBUG
 	}
 
 	if raylib.IsKeyPressed(.SPACE) {
-		frame = true
+		FRAME = true
 	}
 }
 
