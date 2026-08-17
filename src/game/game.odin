@@ -10,6 +10,7 @@ import "vendor:microui"
 
 FontSize :: 14
 
+GAME_CONFIG: GameConfig
 ENABLE_DEBUG := false
 FRAME := true
 
@@ -26,42 +27,51 @@ text_height :: proc(font: microui.Font) -> i32 {
 }
 
 setup_windows :: proc(st: ^ecs.Store, cfg: ^GameConfig) {
-	ecs.spawn_with(st, []any{
+	game_area_id := ecs.spawn_with(st, []any{
 		ecs.new_comp(WindowArea{
 			name = "Game",
 			color = raylib.SKYBLUE,
-			area = cfg.GameRectangle
+			current_area = cfg.GameRectangle,
+			ideal_area = cfg.GameRectangle
 		})
 	})
+	game_area := ecs.query_1(st, ^WindowArea)[0]
+
 	ecs.spawn_with(st, []any{
 		ecs.new_comp(WindowArea{
 			name = "Debug",
 			color = raylib.PINK,
-			area = cfg.DebugRectangle
+			ideal_area = cfg.DebugRectangle,
+			current_area = cfg.DebugRectangle
 		})
 	})
 
-	battle_rectangle: Area = {10, 30, cfg.GameRectangle.z - 20, i32(f32(cfg.GameRectangle.w) * 0.8) - 60}
 	ecs.spawn_with(st, []any{
-		ecs.new_comp(WindowArea{
+		ecs.new_comp(WindowSubArea{
 			name = "Battle Area",
 			color = raylib.RED,
-			area = battle_rectangle
+			parent = game_area,
+			get_current = proc(p: Area) -> Area {
+				return {10, 30, p.z - 20, p.w * 0.8 - 60}
+			},
 		})
 	})
 
-	card_area: Area = {battle_rectangle.x, battle_rectangle.w + battle_rectangle.y + 10, battle_rectangle.z, i32(f32(cfg.GameRectangle.w) * 0.2)}
 	ecs.spawn_with(st, []any{
-		ecs.new_comp(WindowArea{
+		ecs.new_comp(WindowSubArea{
 			name = "Card Area",
 			color = raylib.YELLOW,
-			area = card_area
+			parent = game_area,
+			get_current = proc(p: Area) -> Area {
+				return {p.x+10, p.w * 0.8 - 15, p.z - 20, p.w *0.2}
+				},
 		})
 	})
 }
 
 main :: proc() {
 	cfg := gen_cfg()
+	GAME_CONFIG = cfg
 
 	ctx := &microui.Context{}
 	microui.init(ctx)
@@ -75,6 +85,7 @@ main :: proc() {
 	defer ecs.deinit_store(store)
 
 	ecs.register_component(store, ^WindowArea)
+	ecs.register_component(store, ^WindowSubArea)
 
 	setup_windows(store, &cfg)
 
@@ -92,6 +103,8 @@ main :: proc() {
 			defer { FRAME = !ENABLE_DEBUG || false }
 			raylib.ClearBackground(cfg.BackgroundColor)
 
+			dt := f32(frame_start - lastFrameStart) / f32(sec_in_ns)
+
 			// Get user input
 			get_input(ctx)
 
@@ -101,8 +114,11 @@ main :: proc() {
 
 				windows := ecs.query_1(store, ^WindowArea)
 				setup(windows)
-				update(windows)
+				update(windows, dt)
 				render(windows)
+
+				sub_windows := ecs.query_1(store, ^WindowSubArea)
+				render_subwindows(sub_windows)
 			}
 
 			render_microui(ctx)

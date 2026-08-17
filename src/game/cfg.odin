@@ -7,7 +7,7 @@ gen_cfg :: proc() -> GameConfig {
     FpsCap = 60,
 		BackgroundColor = {74,88,89,255},
 	}
-	cfg.GameRectangle = {0, 0, cfg.ScreenWidth * 3 / 4, cfg.ScreenHeight}
-	cfg.DebugRectangle = {cfg.ScreenWidth * 3 / 4, 0, cfg.ScreenWidth / 4, cfg.ScreenHeight}
+	cfg.GameRectangle = {0, 0, f32(cfg.ScreenWidth) * 3 / 4, f32(cfg.ScreenHeight)}
+	cfg.DebugRectangle = {f32(cfg.ScreenWidth) * 3 / 4, 0, f32(cfg.ScreenWidth) / 4, f32(cfg.ScreenHeight)}
 	return cfg
 }

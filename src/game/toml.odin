@@ -9,8 +9,8 @@ GameConfig :: struct {
 	FpsCap: i32,
 	BackgroundColor: raylib.Color,
 
-	GameRectangle: [4]i32,
-	DebugRectangle: [4]i32,
+	GameRectangle: Area,
+	DebugRectangle: Area,
 }
 
 parse_file :: proc(filename: string) -> ^GameConfig {
