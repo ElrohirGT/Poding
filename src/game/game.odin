@@ -191,12 +191,14 @@ get_input :: proc(ctx: ^microui.Context) {
 		}
 	}
 
-	if raylib.IsKeyPressed(.ENTER) {
-		ENABLE_DEBUG = !ENABLE_DEBUG
-	}
+	if ODIN_DEBUG {
+		if raylib.IsKeyPressed(.ENTER) {
+			ENABLE_DEBUG = !ENABLE_DEBUG
+		}
 
-	if raylib.IsKeyPressed(.SPACE) {
-		FRAME = true
+		if raylib.IsKeyPressed(.SPACE) {
+			FRAME = true
+		}
 	}
 }
 

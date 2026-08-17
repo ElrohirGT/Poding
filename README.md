@@ -13,6 +13,16 @@ find . -type f -iname "*.bin" -delete -print
 find . -type f -iname "out" -delete -print
 ```
 
+### run
+
+Compiles the game (in production mode).
+
+```bash
+cd ./src/game/
+# FILE=$(nix-build cfg.nix --no-out-link)
+odin build -out:game.bin . && ./game.bin &> out
+```
+
 ### game
 
 Compiles the game (in debug mode).
