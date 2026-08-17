@@ -4,6 +4,14 @@ All variants are under it's respective directory inside `./src`.
 
 ## Tasks
 
+### game
+
+Compiles the game.
+
+```bash
+odin build -debug -out:game.bin ./src/game/ && ./game.bin &> out
+```
+
 ### normal
 
 ```bash
