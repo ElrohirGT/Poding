@@ -7,12 +7,12 @@ EntityId :: int
 
 Store :: map[typeid][dynamic]any
 
-init_store :: proc(init_components: int) -> ^Store {
+store_init :: proc(init_components: int) -> ^Store {
 	st := new(Store)
 	return st
 }
 
-deinit_store :: proc(st: ^Store) {
+store_deinit :: proc(st: ^Store) {
 	for _, components in st {
 		for comp in components {
 			if comp != nil {
@@ -27,12 +27,12 @@ deinit_store :: proc(st: ^Store) {
 	free(st)
 }
 
-register_component :: proc(st: ^Store, $ComponentId: typeid) {
+store_register_component :: proc(st: ^Store, $ComponentId: typeid) {
 	entities := [dynamic]any{}
 	st[ComponentId] = entities
 }
 
-spawn_with :: proc(st: ^Store, components: []any) -> EntityId {
+store_spawn_with :: proc(st: ^Store, components: []any) -> EntityId {
 	entity_id := 0
 	for comp_id, cmps in st {
 		if entity_id == 0 {
@@ -55,13 +55,13 @@ spawn_with :: proc(st: ^Store, components: []any) -> EntityId {
 	return entity_id
 }
 
-remove_entity :: proc(st: ^Store, id: uint) {
+store_remove_entity :: proc(st: ^Store, id: uint) {
 	for t_id, &components in st {
 		unordered_remove(&components, id)
 	}
 }
 
-query_1 :: proc(st: ^Store, $CT1: typeid) -> []CT1 {
+store_query1 :: proc(st: ^Store, $CT1: typeid) -> []CT1 {
 	result := make([dynamic]CT1, 0, len(st[CT1]), context.temp_allocator)
 	for component_value, idx in st[CT1] {
 		if component_value != nil {
@@ -71,7 +71,7 @@ query_1 :: proc(st: ^Store, $CT1: typeid) -> []CT1 {
 	return result[:]
 }
 
-query_2 :: proc(st: ^Store, $CT1: typeid, $CT2: typeid) -> []struct{ct1: CT1, ct2: CT2} {
+store_query2 :: proc(st: ^Store, $CT1: typeid, $CT2: typeid) -> []struct{ct1: CT1, ct2: CT2} {
 	st1, found := st[CT1]
 	if !found {
 		return nil
@@ -101,8 +101,8 @@ query_2 :: proc(st: ^Store, $CT1: typeid, $CT2: typeid) -> []struct{ct1: CT1, ct
 
 @(test)
 test_main :: proc(t: ^testing.T) {
-	store := init_store(5)
-	defer deinit_store(store)
+	store := store_init(5)
+	defer store_deinit(store)
 	defer free_all(context.temp_allocator)	// Free all temporary allocations done by
 																					// store queries
 
@@ -110,34 +110,34 @@ test_main :: proc(t: ^testing.T) {
 		x: f32,
 		y: f32,
 	}
-	register_component(store, ^MovementComponent)
+	store_register_component(store, ^MovementComponent)
 
 	VelocityComponent :: struct {
 		x: f32,
 		y: f32,
 	}
-	register_component(store, ^VelocityComponent)
+	store_register_component(store, ^VelocityComponent)
 
-	entidy_id := spawn_with(store, []any{
+	entidy_id := store_spawn_with(store, []any{
 		new_comp(MovementComponent{0,5}),
 		new_comp(VelocityComponent{0,0}),
 	})
 	testing.expect(t, 0 == entidy_id, fmt.aprintfln("%d != 0\n%#v", entidy_id, store, allocator=context.temp_allocator))
-	entidy_id = spawn_with(store, []any{
+	entidy_id = store_spawn_with(store, []any{
 		new_comp(MovementComponent{0,5}),
 		new_comp(VelocityComponent{5,4}),
 	})
 	testing.expect(t, 1 == entidy_id, fmt.aprintfln("%d != 0\n%#v", entidy_id, store, allocator=context.temp_allocator))
-	entidy_id = spawn_with(store, []any{
+	entidy_id = store_spawn_with(store, []any{
 		new_comp(MovementComponent{0,5}),
 	})
 	testing.expect(t, 2 == entidy_id, fmt.aprintfln("%d != 0\n%#v", entidy_id, store, allocator=context.temp_allocator))
 
-	cmps := query_1(store, ^MovementComponent)
+	cmps := store_query1(store, ^MovementComponent)
 
 	testing.expect(t, 3 == len(cmps), fmt.aprintfln("%d != 3\n%#v",  len(cmps), store, allocator=context.temp_allocator))
 
-	entities := query_2(store, ^VelocityComponent, ^MovementComponent)
+	entities := store_query2(store, ^VelocityComponent, ^MovementComponent)
 	testing.expect(t, 2 == len(entities), fmt.aprintfln("%d != 2\n%#v", len(entities), store, allocator=context.temp_allocator))
 
 	ent := entities[1]

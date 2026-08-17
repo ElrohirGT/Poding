@@ -27,7 +27,7 @@ text_height :: proc(font: microui.Font) -> i32 {
 }
 
 setup_windows :: proc(st: ^ecs.Store, cfg: ^GameConfig) {
-	game_area_id := ecs.spawn_with(st, []any{
+	game_area_id := ecs.store_spawn_with(st, []any{
 		ecs.new_comp(WindowArea{
 			name = "Game",
 			color = raylib.SKYBLUE,
@@ -35,9 +35,9 @@ setup_windows :: proc(st: ^ecs.Store, cfg: ^GameConfig) {
 			ideal_area = cfg.GameRectangle
 		})
 	})
-	game_area := ecs.query_1(st, ^WindowArea)[0]
+	game_area := ecs.store_query1(st, ^WindowArea)[0]
 
-	ecs.spawn_with(st, []any{
+	ecs.store_spawn_with(st, []any{
 		ecs.new_comp(WindowArea{
 			name = "Debug",
 			color = raylib.PINK,
@@ -46,7 +46,7 @@ setup_windows :: proc(st: ^ecs.Store, cfg: ^GameConfig) {
 		})
 	})
 
-	ecs.spawn_with(st, []any{
+	ecs.store_spawn_with(st, []any{
 		ecs.new_comp(WindowSubArea{
 			name = "Battle Area",
 			color = raylib.RED,
@@ -57,7 +57,7 @@ setup_windows :: proc(st: ^ecs.Store, cfg: ^GameConfig) {
 		})
 	})
 
-	ecs.spawn_with(st, []any{
+	ecs.store_spawn_with(st, []any{
 		ecs.new_comp(WindowSubArea{
 			name = "Card Area",
 			color = raylib.YELLOW,
@@ -68,7 +68,7 @@ setup_windows :: proc(st: ^ecs.Store, cfg: ^GameConfig) {
 		})
 	})
 
-	ecs.spawn_with(st, []any{
+	ecs.store_spawn_with(st, []any{
 		ecs.new_comp(WindowSubArea{
 			name = "Player sprite",
 			color = raylib.GREEN,
@@ -78,7 +78,7 @@ setup_windows :: proc(st: ^ecs.Store, cfg: ^GameConfig) {
 			}
 		})
 	})
-	ecs.spawn_with(st, []any{
+	ecs.store_spawn_with(st, []any{
 		ecs.new_comp(WindowSubArea{
 			name = "Enemy sprite",
 			color = raylib.ORANGE,
@@ -102,11 +102,11 @@ main :: proc() {
 	raylib.InitWindow(i32(cfg.ScreenWidth), i32(cfg.ScreenHeight), "Main Window")
 	defer raylib.CloseWindow()
 
-	store := ecs.init_store(5)
-	defer ecs.deinit_store(store)
+	store := ecs.store_init(5)
+	defer ecs.store_deinit(store)
 
-	ecs.register_component(store, ^WindowArea)
-	ecs.register_component(store, ^WindowSubArea)
+	ecs.store_register_component(store, ^WindowArea)
+	ecs.store_register_component(store, ^WindowSubArea)
 
 	setup_windows(store, &cfg)
 
@@ -133,12 +133,12 @@ main :: proc() {
 				microui.begin(ctx)
 				defer microui.end(ctx)
 
-				windows := ecs.query_1(store, ^WindowArea)
+				windows := ecs.store_query1(store, ^WindowArea)
 				setup(windows)
 				update(windows, dt)
 				render(windows)
 
-				sub_windows := ecs.query_1(store, ^WindowSubArea)
+				sub_windows := ecs.store_query1(store, ^WindowSubArea)
 				render_subwindows(sub_windows)
 			}
 
