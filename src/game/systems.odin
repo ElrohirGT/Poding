@@ -59,9 +59,11 @@ handle_debug_window :: proc(w: ^WindowArea) {
 update :: proc(windows: []^WindowArea, dt: f32) {
 	vel: f32 = 5
 	for w in windows {
-		if linalg.distance(w.current_area, w.ideal_area) >= 1 {
-			w.current_area = math.lerp(w.current_area, w.ideal_area, dt*vel)
+		if linalg.distance(w.current_area, w.ideal_area) < 1 {
+			continue
 		}
+
+		w.current_area = linalg.lerp(w.current_area, w.ideal_area, dt*vel)
 	}
 }
 
@@ -69,9 +71,9 @@ render :: proc(windows: []^WindowArea) {
 	border_width :i32= 4
 
 	for w in windows {
-		if w.name == "Debug" && !ENABLE_DEBUG {
-			continue
-		}
+		// if w.name == "Debug" && !ENABLE_DEBUG {
+		// 	continue
+		// }
 
 		raylib.DrawRectangle(
 			i32(w.current_area.x),
