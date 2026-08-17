@@ -40,6 +40,24 @@ setup_windows :: proc(st: ^ecs.Store, cfg: ^GameConfig) {
 			area = cfg.DebugRectangle
 		})
 	})
+
+	battle_rectangle: Area = {10, 30, cfg.GameRectangle.z - 20, i32(f32(cfg.GameRectangle.w) * 0.8) - 60}
+	ecs.spawn_with(st, []any{
+		ecs.new_comp(WindowArea{
+			name = "Battle Area",
+			color = raylib.RED,
+			area = battle_rectangle
+		})
+	})
+
+	card_area: Area = {battle_rectangle.x, battle_rectangle.w + battle_rectangle.y + 10, battle_rectangle.z, i32(f32(cfg.GameRectangle.w) * 0.2)}
+	ecs.spawn_with(st, []any{
+		ecs.new_comp(WindowArea{
+			name = "Card Area",
+			color = raylib.YELLOW,
+			area = card_area
+		})
+	})
 }
 
 main :: proc() {
