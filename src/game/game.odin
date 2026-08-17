@@ -67,6 +67,27 @@ setup_windows :: proc(st: ^ecs.Store, cfg: ^GameConfig) {
 				},
 		})
 	})
+
+	ecs.spawn_with(st, []any{
+		ecs.new_comp(WindowSubArea{
+			name = "Player sprite",
+			color = raylib.GREEN,
+			parent = game_area,
+			get_current = proc(p: Area) -> Area {
+				return {p.x+20, p.w*0.55, 128, 128}
+			}
+		})
+	})
+	ecs.spawn_with(st, []any{
+		ecs.new_comp(WindowSubArea{
+			name = "Enemy sprite",
+			color = raylib.ORANGE,
+			parent = game_area,
+			get_current = proc(p: Area) -> Area {
+				return {p.z-128-20, p.y+50, 128, 128}
+			}
+		})
+	})
 }
 
 main :: proc() {
