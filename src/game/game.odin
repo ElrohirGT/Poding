@@ -1,6 +1,5 @@
 package main
 
-import "core:os"
 import "ecs"
 import "core:fmt"
 import "core:time"
@@ -26,14 +25,24 @@ text_height :: proc(font: microui.Font) -> i32 {
 	return FontSize
 }
 
-main :: proc() {
-	// if len(os.args) < 2 {
-	// 	panic("No configuration file supplied!")
-	// }
-	// cfg_filename := os.args[1]
-	// cfg := parse_file(cfg_filename)
-	// fmt.printfln("CFG: %#v", cfg)
+setup_windows :: proc(st: ^ecs.Store, cfg: ^GameConfig) {
+	ecs.spawn_with(st, []any{
+		ecs.new_comp(WindowArea{
+			name = "Game",
+			color = raylib.SKYBLUE,
+			area = cfg.GameRectangle
+		})
+	})
+	ecs.spawn_with(st, []any{
+		ecs.new_comp(WindowArea{
+			name = "Debug",
+			color = raylib.PINK,
+			area = cfg.DebugRectangle
+		})
+	})
+}
 
+main :: proc() {
 	cfg := gen_cfg()
 
 	ctx := &microui.Context{}
@@ -47,13 +56,9 @@ main :: proc() {
 	store := ecs.init_store(5)
 	defer ecs.deinit_store(store)
 
-	// ecs.register_component(store, ^Transform)
-	// ecs.register_component(store, ^RectangleRender)
-	// ecs.register_component(store, ^CircleRender)
-	// ecs.register_component(store, ^SquareCollider)
-	// ecs.register_component(store, ^PadelMovement)
-	// ecs.register_component(store, ^EndGame)
+	ecs.register_component(store, ^WindowArea)
 
+	setup_windows(store, &cfg)
 
 	fmt.printfln("STORE:\n%#v", store)
 
@@ -75,6 +80,11 @@ main :: proc() {
 			{
 				microui.begin(ctx)
 				defer microui.end(ctx)
+
+				windows := ecs.query_1(store, ^WindowArea)
+				setup(windows)
+				update(windows)
+				render(windows)
 			}
 
 			render_microui(ctx)
