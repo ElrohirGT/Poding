@@ -1,5 +1,6 @@
 package main
 
+import "core:os"
 import "ecs"
 import "core:fmt"
 import "core:time"
@@ -26,7 +27,11 @@ text_height :: proc(font: microui.Font) -> i32 {
 }
 
 main :: proc() {
-	cfg := parse_file("cfg.toml")
+	if len(os.args) < 2 {
+		panic("No configuration file supplied!")
+	}
+	cfg_filename := os.args[1]
+	cfg := parse_file(cfg_filename)
 	fmt.printfln("CFG: %#v", cfg)
 
 	ctx := &microui.Context{}
@@ -68,10 +73,11 @@ main :: proc() {
 			{
 				microui.begin(ctx)
 				defer microui.end(ctx)
-
 			}
 
-			render_ui(ctx)
+			raylib.DrawRectangle(cfg.GameRectangle[0], cfg.GameRectangle[1], cfg.GameRectangle[2], cfg.GameRectangle[3], raylib.PINK)
+
+			render_microui(ctx)
 
 			lastFrameStart = time.now()._nsec
 			time.sleep(cast(time.Duration)(max_frame_duration -(lastFrameStart - frame_start)))
@@ -129,7 +135,7 @@ get_input :: proc(ctx: ^microui.Context) {
 	}
 }
 
-render_ui :: proc(ctx: ^microui.Context) {
+render_microui :: proc(ctx: ^microui.Context) {
 	pcm: ^microui.Command = nil
 	for microui.next_command(ctx, &pcm) {
 		switch v in pcm.variant{

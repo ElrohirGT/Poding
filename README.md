@@ -18,7 +18,9 @@ find . -type f -iname "out" -delete -print
 Compiles the game (in debug mode).
 
 ```bash
-cd ./src/game && odin build -debug -out:game.bin . && ./game.bin &> out
+cd ./src/game/
+FILE=$(nix-build cfg.nix --no-out-link)
+odin build -debug -out:game.bin . && ./game.bin "$FILE" &> out
 ```
 
 ### normal

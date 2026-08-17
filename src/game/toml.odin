@@ -8,6 +8,8 @@ GameConfig :: struct {
 	ScreenHeight: i32,
 	FpsCap: i32,
 
+	GameRectangle: [4]i32,
+
 	BackgroundColor: raylib.Color,
 }
 
