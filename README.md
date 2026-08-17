@@ -4,6 +4,15 @@ All variants are under it's respective directory inside `./src`.
 
 ## Tasks
 
+### clean
+
+Cleans all artifacts.
+
+```bash
+find . -type f -iname "*.bin" -delete -print
+find . -type f -iname "out" -delete -print
+```
+
 ### game
 
 Compiles the game (in debug mode).
