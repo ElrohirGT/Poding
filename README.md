@@ -6,16 +6,18 @@ All variants are under it's respective directory inside `./src`.
 
 ### game
 
-Compiles the game.
+Compiles the game (in debug mode).
 
 ```bash
-odin build -debug -out:game.bin ./src/game/ && ./game.bin &> out
+cd ./src/game && odin build -debug -out:game.bin . && ./game.bin &> out
 ```
 
 ### normal
 
+Compiles the unstructured example of Breakout (in debug mode), and runs it
+
 ```bash
-odin build -debug -out:normal.bin ./src/normal/ && ./normal.bin &> out
+cd ./src/normal && odin build -debug -out:game.bin . && ./game.bin &> out
 ```
 
 ### ecs
@@ -23,5 +25,5 @@ odin build -debug -out:normal.bin ./src/normal/ && ./normal.bin &> out
 Compiles the ecs example of Breakout (in debug mode), and runs it
 
 ```bash
-odin build -debug -out:ecs.bin ./src/ecs/ && ./ecs.bin &> out
+cd ./src/ecs && odin build -debug -out:game.bin . && ./game.bin &> out
 ```
