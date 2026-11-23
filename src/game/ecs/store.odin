@@ -1,19 +1,25 @@
 package ecs
 
+import "core:slice"
 import "core:fmt"
 import "core:testing"
 
-EntityId :: int
+EntityId :: uint
 
-Store :: map[typeid][dynamic]any
+Store :: struct{
+	ids: [dynamic]EntityId,
+	entities: map[typeid][dynamic]any,
+}
 
 store_init :: proc(init_components: int) -> ^Store {
 	st := new(Store)
+	st.ids = make([dynamic]EntityId)
+	st.entities = make(map[typeid][dynamic]any)
 	return st
 }
 
 store_deinit :: proc(st: ^Store) {
-	for _, components in st {
+	for _, components in st.entities {
 		for comp in components {
 			if comp != nil {
 				inner := (^rawptr)(comp.data)^ // read the pointer stored inside `box` (i.e. `ref`)
@@ -23,18 +29,19 @@ store_deinit :: proc(st: ^Store) {
 		}
 		delete(components)
 	}
-	delete(st^)
+	delete(st.ids)
+	delete(st.entities)
 	free(st)
 }
 
 store_register_component :: proc(st: ^Store, $ComponentId: typeid) {
 	entities := [dynamic]any{}
-	st[ComponentId] = entities
+	st.entities[ComponentId] = entities
 }
 
 store_spawn_with :: proc(st: ^Store, components: []any) -> EntityId {
-	entity_id := 0
-	for comp_id, cmps in st {
+	entity_id: uint = 0
+	for comp_id, cmps in st.entities {
 		if entity_id == 0 {
 			entity_id = len(cmps)
 		}
@@ -47,23 +54,38 @@ store_spawn_with :: proc(st: ^Store, components: []any) -> EntityId {
 			}
 		}
 
-		collection := st[comp_id]
+		collection := st.entities[comp_id]
 		append(&collection, value)
-		st^[comp_id] = collection
+		st.entities[comp_id] = collection
 	}
+
+	append(&st.ids, entity_id)
 
 	return entity_id
 }
 
-store_remove_entity :: proc(st: ^Store, id: uint) {
-	for t_id, &components in st {
-		unordered_remove(&components, id)
+store_remove_entity :: proc(st: ^Store, id: EntityId) {
+	entity_idx := -1
+	for value, idx in st.ids {
+		if value == id {
+			entity_idx = idx
+			unordered_remove(&st.ids, idx)
+			break
+		}
+	}
+
+	if entity_idx == -1 {
+		panic("Entity not found!")
+	}
+
+	for t_id, &components in st.entities {
+		unordered_remove(&components, entity_idx)
 	}
 }
 
 store_query1 :: proc(st: ^Store, $CT1: typeid) -> []CT1 {
-	result := make([dynamic]CT1, 0, len(st[CT1]), context.temp_allocator)
-	for component_value, idx in st[CT1] {
+	result := make([dynamic]CT1, 0, len(st.entities[CT1]), context.temp_allocator)
+	for component_value, idx in st.entities[CT1] {
 		if component_value != nil {
 			append(&result, component_value.(CT1))
 		}
@@ -72,18 +94,18 @@ store_query1 :: proc(st: ^Store, $CT1: typeid) -> []CT1 {
 }
 
 store_query2 :: proc(st: ^Store, $CT1: typeid, $CT2: typeid) -> []struct{ct1: CT1, ct2: CT2} {
-	st1, found := st[CT1]
+	st1, found := st.entities[CT1]
 	if !found {
 		return nil
 	}
 
-	result := make([dynamic]struct{ct1: CT1, ct2: CT2}, 0, len(st[CT1]), context.temp_allocator)
+	result := make([dynamic]struct{ct1: CT1, ct2: CT2}, 0, len(st.entities[CT1]), context.temp_allocator)
 	for cp1, entity_id in st1 {
 		if cp1 == nil {
 			continue
 		}
 
-		st2, found := st[CT2]
+		st2, found := st.entities[CT2]
 		if !found {
 			continue
 		}
@@ -98,6 +120,46 @@ store_query2 :: proc(st: ^Store, $CT1: typeid, $CT2: typeid) -> []struct{ct1: CT
 	return result[:]
 }
 
+@(test)
+test_scenes :: proc(t: ^testing.T) {
+	store := store_init(5)
+	defer store_deinit(store)
+	defer free_all(context.temp_allocator)
+
+	MovementComponent :: struct {
+		x: f32,
+		y: f32,
+	}
+	store_register_component(store, ^MovementComponent)
+
+	scene_a := scene_init()
+	defer scene_deinit(scene_a, store)
+
+	scene_add(scene_a, []any {
+		new_comp(MovementComponent{0,5}),
+	})
+	scene_add(scene_a, []any {
+		new_comp(MovementComponent{3,4}),
+	})
+	testing.expect_value(t, len(scene_a.entities), 2)
+
+	scene_b := scene_init()
+	defer scene_deinit(scene_b, store)
+
+	scene_add(scene_b, []any {
+		new_comp(MovementComponent{10, 15}),
+	})
+	scene_add(scene_b, []any {
+		new_comp(MovementComponent{2,3}),
+	})
+	testing.expect_value(t, len(scene_b.entities), 2)
+
+	scene_spawn(scene_a, store)
+	testing.expect_value(t, len(store.entities[typeid_of(^MovementComponent)]), 2)
+
+	cmps := store_query1(store, ^MovementComponent)
+	testing.expect_value(t, len(cmps), 2)
+}
 
 @(test)
 test_main :: proc(t: ^testing.T) {

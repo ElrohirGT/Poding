@@ -78,6 +78,7 @@ setup_windows :: proc(st: ^ecs.Store, cfg: ^GameConfig) {
 			}
 		})
 	})
+
 	ecs.store_spawn_with(st, []any{
 		ecs.new_comp(WindowSubArea{
 			name = "Enemy sprite",
@@ -108,7 +109,15 @@ main :: proc() {
 	ecs.store_register_component(store, ^WindowArea)
 	ecs.store_register_component(store, ^WindowSubArea)
 
-	setup_windows(store, &cfg)
+	scenes := setup_scenes(&cfg)
+	defer {
+		for sc in scenes {
+			ecs.scene_deinit(sc, store)
+		}
+	}
+	active_scene := scenes[0]
+	ecs.scene_spawn(active_scene, store)
+	// setup_windows(store, &cfg)
 
 	fmt.printfln("STORE:\n%#v", store)
 
