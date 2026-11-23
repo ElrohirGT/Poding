@@ -35,60 +35,60 @@ setup_windows :: proc(st: ^ecs.Store, cfg: ^GameConfig) {
 			ideal_area = cfg.GameRectangle
 		})
 	})
-	game_area := ecs.store_query1(st, ^WindowArea)[0]
+								game_area := ecs.store_query1(st, ^WindowArea)[0]
 
-	ecs.store_spawn_with(st, []any{
-		ecs.new_comp(WindowArea{
-			name = "Debug",
-			color = raylib.PINK,
-			ideal_area = cfg.DebugRectangle,
-			current_area = cfg.DebugRectangle
-		})
-	})
+								ecs.store_spawn_with(st, []any{
+									ecs.new_comp(WindowArea{
+										name = "Debug",
+										color = raylib.PINK,
+										ideal_area = cfg.DebugRectangle,
+										current_area = cfg.DebugRectangle
+									})
+								})
 
-	ecs.store_spawn_with(st, []any{
-		ecs.new_comp(WindowSubArea{
-			name = "Battle Area",
-			color = raylib.RED,
-			parent = game_area,
-			get_current = proc(p: Area) -> Area {
-				return {10, 30, p.z - 20, p.w * 0.8 - 60}
-			},
-		})
-	})
+								ecs.store_spawn_with(st, []any{
+									ecs.new_comp(WindowSubArea{
+										name = "Battle Area",
+										color = raylib.RED,
+										parent = game_area,
+										get_current = proc(p: Area) -> Area {
+											return {10, 30, p.z - 20, p.w * 0.8 - 60}
+											},
+									})
+								})
 
-	ecs.store_spawn_with(st, []any{
-		ecs.new_comp(WindowSubArea{
-			name = "Card Area",
-			color = raylib.YELLOW,
-			parent = game_area,
-			get_current = proc(p: Area) -> Area {
-				return {p.x+10, p.w * 0.8 - 15, p.z - 20, p.w *0.2}
-				},
-		})
-	})
+								ecs.store_spawn_with(st, []any{
+									ecs.new_comp(WindowSubArea{
+										name = "Card Area",
+										color = raylib.YELLOW,
+										parent = game_area,
+										get_current = proc(p: Area) -> Area {
+											return {p.x+10, p.w * 0.8 - 15, p.z - 20, p.w *0.2}
+											},
+									})
+								})
 
-	ecs.store_spawn_with(st, []any{
-		ecs.new_comp(WindowSubArea{
-			name = "Player sprite",
-			color = raylib.GREEN,
-			parent = game_area,
-			get_current = proc(p: Area) -> Area {
-				return {p.x+20, p.w*0.55, 128, 128}
-			}
-		})
-	})
+								ecs.store_spawn_with(st, []any{
+									ecs.new_comp(WindowSubArea{
+										name = "Player sprite",
+										color = raylib.GREEN,
+										parent = game_area,
+										get_current = proc(p: Area) -> Area {
+											return {p.x+20, p.w*0.55, 128, 128}
+										}
+									})
+								})
 
-	ecs.store_spawn_with(st, []any{
-		ecs.new_comp(WindowSubArea{
-			name = "Enemy sprite",
-			color = raylib.ORANGE,
-			parent = game_area,
-			get_current = proc(p: Area) -> Area {
-				return {p.z-128-20, p.y+50, 128, 128}
-			}
-		})
-	})
+								ecs.store_spawn_with(st, []any{
+									ecs.new_comp(WindowSubArea{
+										name = "Enemy sprite",
+										color = raylib.ORANGE,
+										parent = game_area,
+										get_current = proc(p: Area) -> Area {
+											return {p.z-128-20, p.y+50, 128, 128}
+										}
+									})
+								})
 }
 
 main :: proc() {
@@ -108,6 +108,8 @@ main :: proc() {
 
 	ecs.store_register_component(store, ^WindowArea)
 	ecs.store_register_component(store, ^WindowSubArea)
+	ecs.store_register_component(store, ^Life)
+	ecs.store_register_component(store, ^Area)
 
 	scenes := setup_scenes(&cfg)
 	defer {
@@ -135,6 +137,9 @@ main :: proc() {
 
 			dt := f32(frame_start - lastFrameStart) / f32(sec_in_ns)
 
+			// Needs to be before the input is consumed and handed over to microui
+			life_update(ecs.store_query1(store, ^Life))
+
 			// Get user input
 			get_input(ctx)
 
@@ -143,12 +148,12 @@ main :: proc() {
 				defer microui.end(ctx)
 
 				windows := ecs.store_query1(store, ^WindowArea)
-				setup(windows)
-				update(windows, dt)
-				render(windows)
+				windows_setup(windows)
+				windows_update(windows, dt)
+				windows_render(windows)
 
-				sub_windows := ecs.store_query1(store, ^WindowSubArea)
-				render_subwindows(sub_windows)
+				subwindows_render(ecs.store_query1(store, ^WindowSubArea))
+				life_render(ecs.store_query2(store, ^Life, ^Area))
 			}
 
 			render_microui(ctx)
@@ -160,43 +165,47 @@ main :: proc() {
 }
 
 get_input :: proc(ctx: ^microui.Context) {
-	mouseX := raylib.GetMouseX()
-	mouseY := raylib.GetMouseY()
-	microui.input_mouse_move(ctx, mouseX, mouseY)
+	// Only on debug send data to microui
+	if ENABLE_DEBUG {
 
-	mouseScroll := raylib.GetMouseWheelMoveV()
-	microui.input_scroll(ctx, cast(i32)mouseScroll.x, cast(i32)mouseScroll.y)
+		mouseX := raylib.GetMouseX()
+		mouseY := raylib.GetMouseY()
+		microui.input_mouse_move(ctx, mouseX, mouseY)
 
-	switch {
-	case raylib.IsMouseButtonPressed(raylib.MouseButton.LEFT):
-		microui.input_mouse_down(ctx, mouseX, mouseY, microui.Mouse.LEFT)
-	case raylib.IsMouseButtonPressed(raylib.MouseButton.RIGHT):
-		microui.input_mouse_down(ctx, mouseX, mouseY, microui.Mouse.RIGHT)
-	case raylib.IsMouseButtonPressed(raylib.MouseButton.MIDDLE):
-		microui.input_mouse_down(ctx, mouseX, mouseY, microui.Mouse.MIDDLE)
-	}
+		mouseScroll := raylib.GetMouseWheelMoveV()
+		microui.input_scroll(ctx, cast(i32)mouseScroll.x, cast(i32)mouseScroll.y)
 
-	switch {
-	case raylib.IsMouseButtonReleased(raylib.MouseButton.LEFT):
-		microui.input_mouse_up(ctx, mouseX, mouseY, microui.Mouse.LEFT)
-	case raylib.IsMouseButtonReleased(raylib.MouseButton.RIGHT):
-		microui.input_mouse_up(ctx, mouseX, mouseY, microui.Mouse.RIGHT)
-	case raylib.IsMouseButtonReleased(raylib.MouseButton.MIDDLE):
-		microui.input_mouse_up(ctx, mouseX, mouseY, microui.Mouse.MIDDLE)
-	}
-
-	for k := raylib.GetKeyPressed(); k != raylib.KeyboardKey.KEY_NULL; k = raylib.GetKeyPressed() {
-		microui.input_key_down(ctx, cast(microui.Key)k)
-
-		size: c.int
-		c_text := raylib.CodepointToUTF8(raylib.GetCharPressed(), &size)
-		text, err := strings.clone_from_cstring_bounded(c_text, int(size))
-		if err != nil {
-			panic("Failed to clone to odin string")
+		switch {
+		case raylib.IsMouseButtonPressed(raylib.MouseButton.LEFT):
+			microui.input_mouse_down(ctx, mouseX, mouseY, microui.Mouse.LEFT)
+		case raylib.IsMouseButtonPressed(raylib.MouseButton.RIGHT):
+			microui.input_mouse_down(ctx, mouseX, mouseY, microui.Mouse.RIGHT)
+		case raylib.IsMouseButtonPressed(raylib.MouseButton.MIDDLE):
+			microui.input_mouse_down(ctx, mouseX, mouseY, microui.Mouse.MIDDLE)
 		}
-		if len(text) > 0 {
-			microui.input_text(ctx, text)
-			fmt.printfln("Got text: %s - %s | %d", text, ctx.text_input.buf[:], strings.builder_len(ctx.text_input))
+
+		switch {
+		case raylib.IsMouseButtonReleased(raylib.MouseButton.LEFT):
+			microui.input_mouse_up(ctx, mouseX, mouseY, microui.Mouse.LEFT)
+		case raylib.IsMouseButtonReleased(raylib.MouseButton.RIGHT):
+			microui.input_mouse_up(ctx, mouseX, mouseY, microui.Mouse.RIGHT)
+		case raylib.IsMouseButtonReleased(raylib.MouseButton.MIDDLE):
+			microui.input_mouse_up(ctx, mouseX, mouseY, microui.Mouse.MIDDLE)
+		}
+
+		for k := raylib.GetKeyPressed(); k != raylib.KeyboardKey.KEY_NULL; k = raylib.GetKeyPressed() {
+			microui.input_key_down(ctx, cast(microui.Key)k)
+
+			size: c.int
+			c_text := raylib.CodepointToUTF8(raylib.GetCharPressed(), &size)
+			text, err := strings.clone_from_cstring_bounded(c_text, int(size))
+			if err != nil {
+				panic("Failed to clone to odin string")
+			}
+			if len(text) > 0 {
+				microui.input_text(ctx, text)
+				fmt.printfln("Got text: %s - %s | %d", text, ctx.text_input.buf[:], strings.builder_len(ctx.text_input))
+			}
 		}
 	}
 

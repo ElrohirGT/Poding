@@ -1,5 +1,6 @@
 package main
 
+import "core:fmt"
 import "core:math/linalg"
 import "core:math"
 import "core:strings"
@@ -19,7 +20,7 @@ WindowSubArea :: struct {
 	get_current: proc(Area) -> Area,
 }
 
-setup :: proc(windows: []^WindowArea) { // Change window dimensions
+windows_setup :: proc(windows: []^WindowArea) { // Change window dimensions
 	for w in windows {
 		if w.name == "Debug" {
 			handle_debug_window(w)
@@ -48,15 +49,15 @@ handle_debug_window :: proc(w: ^WindowArea) {
 		w.ideal_area = GAME_CONFIG.DebugRectangle
 	} else {
 		w.ideal_area = {
-				GAME_CONFIG.DebugRectangle.x+GAME_CONFIG.DebugRectangle.z,
-				GAME_CONFIG.DebugRectangle.y,
-				GAME_CONFIG.DebugRectangle.z,
-				GAME_CONFIG.DebugRectangle.w
-			}
+			GAME_CONFIG.DebugRectangle.x+GAME_CONFIG.DebugRectangle.z,
+			GAME_CONFIG.DebugRectangle.y,
+			GAME_CONFIG.DebugRectangle.z,
+			GAME_CONFIG.DebugRectangle.w
+		}
 	}
 }
 
-update :: proc(windows: []^WindowArea, dt: f32) {
+windows_update :: proc(windows: []^WindowArea, dt: f32) {
 	vel: f32 = 5
 	for w in windows {
 		if linalg.distance(w.current_area, w.ideal_area) < 1 {
@@ -67,7 +68,7 @@ update :: proc(windows: []^WindowArea, dt: f32) {
 	}
 }
 
-render :: proc(windows: []^WindowArea) {
+windows_render :: proc(windows: []^WindowArea) {
 	border_width :i32= 4
 
 	for w in windows {
@@ -98,7 +99,7 @@ render :: proc(windows: []^WindowArea) {
 	}
 }
 
-render_subwindows :: proc(windows: []^WindowSubArea) {
+subwindows_render :: proc(windows: []^WindowSubArea) {
 	border_width :i32= 4
 
 	for w in windows {
@@ -124,5 +125,53 @@ render_subwindows :: proc(windows: []^WindowSubArea) {
 			panic("Failed to clone text!")
 		}
 		raylib.DrawText(cname, i32(current.x+f32(border_width)*2), i32(current.y+f32(border_width)*2), FontSize, w.color)
+	}
+}
+
+Life :: struct {
+	current: i32,
+	max: i32,
+	sub_key: raylib.KeyboardKey,
+	add_key: raylib.KeyboardKey,
+	color: raylib.Color,
+}
+
+life_update :: proc (lives: []^Life) {
+	for l in lives {
+		if raylib.IsKeyPressed(l.sub_key) {
+			fmt.println("Reduced life!")
+			l.current = max(0, l.current - 1)
+		} else if raylib.IsKeyPressed(l.add_key) {
+			fmt.println("Aumented life!")
+			l.current = min(l.max, l.current + 1)
+		}
+	}
+}
+
+life_render :: proc(lives: []struct{ct1: ^Life, ct2: ^Area}) {
+	width: i32 = 20
+	padding: i32 = 5
+	for l_pack in lives {
+		l := l_pack.ct1
+		rec := l_pack.ct2
+		for i: i32 = 0; i < l.max; i += 1 {
+			if i < l.current {
+				raylib.DrawRectangle(
+					i32(rec.x) + (width+padding) * i,
+					i32(rec.y),
+					width,
+					width,
+					l.color,
+				)
+			} else {
+				raylib.DrawRectangleLines(
+					i32(rec.x) + (width+padding) * i,
+					i32(rec.y),
+					width,
+					width,
+					l.color,
+				)
+			}
+		}
 	}
 }

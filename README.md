@@ -33,6 +33,16 @@ cd ./src/game/
 odin build -debug -out:game.bin . && ./game.bin &> out
 ```
 
+### debug
+
+Runs the GDB debugger on the game. Must be compiled first!
+
+```bash
+cd ./src/game/
+
+gdb ./game.bin
+```
+
 ### normal
 
 Compiles the unstructured example of Breakout (in debug mode), and runs it

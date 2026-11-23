@@ -43,6 +43,17 @@ windows_scene :: proc(cfg: ^GameConfig) -> ^ecs.Scene {
 		})
 	})
 
+	ecs.scene_add(sc, []any{
+		ecs.new_comp(Life{
+			current = 5,
+			sub_key = raylib.KeyboardKey.J,
+			add_key = raylib.KeyboardKey.K,
+			color = raylib.PINK,
+			max = 5,
+		}),
+		ecs.new_comp(Area {100,100,0,0})
+	})
+
 	ecs.scene_add(sc, []any {
 		ecs.new_comp(WindowSubArea{
 			name = "Card Area",
