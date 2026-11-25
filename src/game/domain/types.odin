@@ -7,11 +7,18 @@ import "core:math/rand"
 
 Currency :: f64 // alias, so a Big type can replace it later
 
-Scene_Id :: enum u8 { Home, Shop, Date }
+Scene_Id :: enum u8 { Home, Shop, Date, Deck }
 
-Rarity :: enum u8 { Common, Rare, Epic }
+Rarity :: enum u8 { Common, Rare, Epic, Legendary }
 
-Card_Id :: enum u8 { None, Compliment, Smile, Joke, Fun_Fact, Bold_Move }
+Card_Id :: enum u8 {
+	None,
+	Compliment, Smile, Joke, Fun_Fact, Bold_Move,
+	Ask_Question, Listen, Share_Story, Light_Tease,                  // common
+	Pickup_Line, Deep_Question, Show_Confidence, Find_Common,        // rare
+	Witty_Banter, Grand_Gesture, Open_Up,                            // epic
+	Soulmate_Moment,                                                 // legendary
+}
 Pack_Id :: enum u8 { Starter, Premium }
 Character_Id :: enum u8 { Rin, Kai }
 
@@ -37,6 +44,11 @@ Reject_Reason :: enum u8 {
 	Not_In_Battle,
 	Bad_Slot,
 	No_Energy,
+	// deck building
+	Not_Owned,   // every owned copy is already in the deck
+	Copy_Limit,  // rarity copy limit reached
+	Deck_Full,   // MAX_DECK reached
+	Not_In_Deck, // nothing to remove
 }
 
 // ---------------------------------------------------------------- tuning
@@ -44,7 +56,7 @@ Reject_Reason :: enum u8 {
 MAX_PACK        :: 8
 MAX_DECK        :: 40
 MAX_HAND        :: 7
-DECK_MIN        :: 10
+DECK_MIN        :: 24
 HAND_DRAW       :: 5
 ENERGY_PER_TURN :: 3
 
@@ -61,6 +73,9 @@ PROBE_BASE_COST   :: 50.0
 DISTRACTED_LOSS   :: 8.0
 
 REACTION_MULT := [Reaction]f32{.Neutral = 0, .Likes = 2, .Dislikes = -0.5}
+
+// Max copies of one card in a single deck, by rarity.
+COPY_LIMIT := [Rarity]u8{.Common = 5, .Rare = 3, .Epic = 1, .Legendary = 1}
 
 // ---------------------------------------------------------------- requirements
 
@@ -98,7 +113,7 @@ PACKS := [Pack_Id]Pack_Def{
 	.Starter = {name = "Starter Pack", cost = 50, size = 3,
 	            odds = #partial [Rarity]f32{.Common = 0.9, .Rare = 0.1}},
 	.Premium = {name = "Premium Pack", cost = 500, size = 5,
-	            odds = [Rarity]f32{.Common = 0.6, .Rare = 0.3, .Epic = 0.1},
+	            odds = [Rarity]f32{.Common = 0.6, .Rare = 0.25, .Epic = 0.1, .Legendary = 0.05},
 	            requires = Min_Affinity{.Rin, 2}},
 }
 
@@ -106,11 +121,31 @@ PACKS := [Pack_Id]Pack_Def{
 // With evenly spread likes a blind specific card averages the same as generic.
 CARDS := [Card_Id]Card_Def{
 	.None       = {},
-	.Compliment = {name = "Give a compliment",     approach = .Generic,   power = 6,  energy = 1, rarity = .Common},
-	.Smile      = {name = "Smile at them",         approach = .Generic,   power = 3,  energy = 0, rarity = .Common},
-	.Joke       = {name = "Say a joke",            approach = .Humor,     power = 12, energy = 1, rarity = .Rare},
-	.Fun_Fact   = {name = "Explain a random fact", approach = .Knowledge, power = 12, energy = 1, rarity = .Rare},
-	.Bold_Move  = {name = "Make a bold move",      approach = .Boldness,  power = 24, energy = 2, rarity = .Epic},
+	.Compliment = {name = "Give a compliment",       approach = .Generic,   power = 6,  energy = 1, rarity = .Common},
+	.Smile      = {name = "Smile at them",           approach = .Generic,   power = 3,  energy = 0, rarity = .Common},
+	.Joke       = {name = "Say a joke",              approach = .Humor,     power = 12, energy = 1, rarity = .Rare},
+	.Fun_Fact   = {name = "Explain a random fact",   approach = .Knowledge, power = 12, energy = 1, rarity = .Rare},
+	.Bold_Move  = {name = "Make a bold move",        approach = .Boldness,  power = 24, energy = 2, rarity = .Epic},
+
+	// Common cards
+	.Ask_Question    = {name = "Ask about their day",       approach = .Generic,      power = 6,  energy = 1, rarity = .Common},
+	.Listen          = {name = "Listen attentively",       approach = .Generic,      power = 3,  energy = 0, rarity = .Common},
+	.Share_Story     = {name = "Share a personal story",    approach = .Knowledge,    power = 6,  energy = 1, rarity = .Common},
+	.Light_Tease     = {name = "Playfully tease them",      approach = .Humor,        power = 6,  energy = 1, rarity = .Common},
+
+	// Rare cards
+	.Pickup_Line     = {name = "Use a cheesy pickup line",  approach = .Humor,        power = 12, energy = 1, rarity = .Rare},
+	.Deep_Question   = {name = "Ask a deep question",       approach = .Knowledge,   power = 12, energy = 1, rarity = .Rare},
+	.Show_Confidence = {name = "Show your confidence",      approach = .Boldness,    power = 12, energy = 1, rarity = .Rare},
+	.Find_Common     = {name = "Find common interests",     approach = .Knowledge,   power = 12, energy = 1, rarity = .Rare},
+
+	// Epic cards
+	.Witty_Banter    = {name = "Engage in witty banter",    approach = .Humor,        power = 24, energy = 2, rarity = .Epic},
+	.Grand_Gesture   = {name = "Make a grand gesture",      approach = .Boldness,    power = 24, energy = 2, rarity = .Epic},
+	.Open_Up         = {name = "Open up emotionally",       approach = .Knowledge,   power = 24, energy = 2, rarity = .Epic},
+
+	// Legendary card
+	.Soulmate_Moment = {name = "Share a perfect moment",    approach = .Generic,     power = 36, energy = 3, rarity = .Legendary},
 }
 
 CHARACTERS := [Character_Id]Character_Def{

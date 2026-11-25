@@ -72,14 +72,6 @@ economy :: proc(w: ^World) {
 	domain.economy_tick(&w.state, w.dt)
 }
 
-// TEMPORARY until the Deck screen exists: keep decks synced to the collection.
-deck_sync :: proc(w: ^World) {
-	if w.battle.phase == .Player_Turn { return }
-	for who in domain.Character_Id {
-		domain.auto_deck(&w.state, who)
-	}
-}
-
 tap_rules :: proc(w: ^World) {
 	for req in domain.bus_read(&w.bus, domain.Tapped) {
 		amount := domain.tap(&w.state, req.what)
@@ -169,15 +161,41 @@ end_turn_rules :: proc(w: ^World) {
 	}
 }
 
+deck_rules :: proc(w: ^World) {
+	for req in domain.bus_read(&w.bus, domain.Deck_Add_Requested) {
+		if err := domain.deck_add(&w.state, &w.battle, req.who, req.card); err != .None {
+			domain.bus_emit(&w.bus, domain.Action_Rejected{err})
+		} else {
+			domain.bus_emit(&w.bus, domain.Deck_Changed{req.who})
+		}
+	}
+	for req in domain.bus_read(&w.bus, domain.Deck_Remove_Requested) {
+		if err := domain.deck_remove(&w.state, &w.battle, req.who, req.card); err != .None {
+			domain.bus_emit(&w.bus, domain.Action_Rejected{err})
+		} else {
+			domain.bus_emit(&w.bus, domain.Deck_Changed{req.who})
+		}
+	}
+	for req in domain.bus_read(&w.bus, domain.Deck_Auto_Fill_Requested) {
+		if err := domain.deck_edit_blocker(&w.battle); err != .None {
+			domain.bus_emit(&w.bus, domain.Action_Rejected{err})
+		} else {
+			domain.auto_deck(&w.state, req.who)
+			domain.bus_emit(&w.bus, domain.Deck_Changed{req.who})
+		}
+	}
+}
+
 // The one non-UI emitter of intents: table of fact -> navigation.
 navigation_flow :: proc(w: ^World) {
 	for _ in domain.bus_read(&w.bus, domain.Date_Started) {
 		domain.bus_emit(&w.bus, domain.Scene_Change_Requested{.Date})
 	}
-	// Home is built per focused girl (notebook rows), so rebuild on a focus change.
+	// Home and Deck are built per focused girl (notebook rows / deck buttons),
+	// so rebuild on a focus change.
 	for _ in domain.bus_read(&w.bus, domain.Focus_Changed) {
-		if w.active_id == .Home {
-			domain.bus_emit(&w.bus, domain.Scene_Change_Requested{.Home})
+		if w.active_id == .Home || w.active_id == .Deck {
+			domain.bus_emit(&w.bus, domain.Scene_Change_Requested{w.active_id})
 		}
 	}
 }
@@ -217,6 +235,10 @@ reject_text :: proc(r: domain.Reject_Reason) -> string {
 	case .Not_In_Battle:      return "Not on a date"
 	case .Bad_Slot:           return "No card there"
 	case .No_Energy:          return "Not enough energy"
+	case .Not_Owned:          return "No more copies owned"
+	case .Copy_Limit:         return "Copy limit reached"
+	case .Deck_Full:          return "Deck is full"
+	case .Not_In_Deck:        return "Not in the deck"
 	}
 	return ""
 }
@@ -269,7 +291,8 @@ fact_text :: proc(e: domain.Event) -> (text: string, ok: bool) {
 	     domain.Date_Started, domain.Turn_Started, domain.Date_Ended,
 	     domain.Scene_Change_Requested, domain.Tapped, domain.Buy_Pack_Requested,
 	     domain.Focus_Character_Requested, domain.Date_Start_Requested, domain.Play_Card_Requested,
-	     domain.End_Turn_Requested, domain.Probe_Requested:
+	     domain.End_Turn_Requested, domain.Probe_Requested, domain.Deck_Changed,
+	     domain.Deck_Add_Requested, domain.Deck_Remove_Requested, domain.Deck_Auto_Fill_Requested:
 		return "", false
 	case nil:
 		return "", false

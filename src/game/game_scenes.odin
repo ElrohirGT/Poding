@@ -93,7 +93,7 @@ home_build :: proc(w: ^World) -> ^ecs.Scene {
 	// navigation
 	ui_button(sc, s, {0.02, 0.84, 0.30, 0.11}, "Cards", domain.Scene_Change_Requested{.Shop})
 	ui_button(sc, s, {0.35, 0.84, 0.30, 0.11}, "Date", domain.Date_Start_Requested{focus})
-	ui_button(sc, s, {0.68, 0.84, 0.30, 0.11}, "Deck (soon)", nil) // nil event = disabled placeholder
+	ui_button(sc, s, {0.68, 0.84, 0.30, 0.11}, "Deck", domain.Scene_Change_Requested{.Deck})
 	return sc
 }
 
@@ -145,5 +145,58 @@ date_build :: proc(w: ^World) -> ^ecs.Scene {
 			ecs.new_comp(Button{on_click = domain.Play_Card_Requested{u8(i)}}),
 		)
 	}
+	return sc
+}
+
+// ---------------------------------------------------------------- Deck
+
+// Cards are listed by rarity (Common first), two columns, one row per card.
+// Every row is baked for the focused character; the screen is rebuilt when
+// the focus changes (see navigation_flow). Counts and button states are not
+// baked: labels read the state each frame and `gate` greys the buttons.
+deck_build :: proc(w: ^World) -> ^ecs.Scene {
+	sc := ecs.scene_init()
+	s := &w.screen
+	focus := w.state.focus
+
+	// character tabs + header
+	for who in domain.Character_Id {
+		ui_button(sc, s, {0.02 + f32(int(who)) * 0.12, 0.10, 0.11, 0.06},
+			domain.CHARACTERS[who].name, domain.Focus_Character_Requested{who}, selected = who == focus)
+	}
+	ui_label(sc, s, {0.28, 0.10, 0.70, 0.04}, bind = .Deck_Title, size = 20)
+	ui_label(sc, s, {0.28, 0.14, 0.70, 0.03}, bind = .Deck_Rules, size = 14)
+
+	// card list
+	list := ui_panel(sc, s, {0.02, 0.18, 0.96, 0.65})
+
+	total := 0
+	for c in domain.Card_Id {
+		if c != .None { total += 1 }
+	}
+	rows_per_col := max((total + 1) / 2, 1)
+	row_h := 0.97 / f32(rows_per_col)
+
+	i := 0
+	for rarity in domain.Rarity {
+		for c in domain.Card_Id {
+			if c == .None || domain.CARDS[c].rarity != rarity { continue }
+			col, row := i / rows_per_col, i % rows_per_col
+			i += 1
+
+			r := ui_panel(sc, list, {0.01 + f32(col) * 0.50, 0.015 + f32(row) * row_h, 0.48, row_h - 0.008})
+			ui_panel(sc, r, {0, 0, 0.012, 1}, rarity_color(rarity)) // rarity stripe
+			ui_label(sc, r, {0.04, 0.06, 0.52, 0.45}, domain.CARDS[c].name, size = 15)
+			ui_label(sc, r, {0.04, 0.52, 0.55, 0.40}, bind = .Deck_Card_Info, arg = int(c), size = 12)
+			ui_label(sc, r, {0.58, 0.15, 0.20, 0.70}, bind = .Deck_Card_Count, arg = int(c), size = 14)
+			ui_button(sc, r, {0.79, 0.15, 0.09, 0.70}, "-", domain.Deck_Remove_Requested{focus, c})
+			ui_button(sc, r, {0.89, 0.15, 0.09, 0.70}, "+", domain.Deck_Add_Requested{focus, c})
+		}
+	}
+
+	// footer
+	ui_label(sc, s, {0.02, 0.85, 0.60, 0.05}, bind = .Deck_Status, size = 18)
+	ui_button(sc, s, {0.66, 0.92, 0.17, 0.06}, "Auto-fill", domain.Deck_Auto_Fill_Requested{focus})
+	ui_button(sc, s, {0.85, 0.92, 0.13, 0.06}, "Home", domain.Scene_Change_Requested{.Home})
 	return sc
 }
