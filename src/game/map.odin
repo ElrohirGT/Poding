@@ -10,7 +10,7 @@ import "vendor:raylib"
 //   - next to the Library -> Scene_Change_Requested{.Deck}
 // These systems only read input and emit intents; they never touch w.state.
 
-MAP_PLAYER_SIZE  :: f32(22)  // px
+MAP_PLAYER_SIZE  :: f32(48)  // px
 MAP_PLAYER_SPEED :: f32(240) // px / second
 MAP_REACH        :: f32(16)  // px: how close counts as "next to" a spot
 MAP_START        :: [2]f32{0.5, 0.82} // centre of the player, fractions of the map
@@ -36,7 +36,7 @@ CHARACTER_SPRITES := [domain.Character_Id]Sprite{
 // The player only animates while walking. With PLAYER_DIRECTIONAL the sheet has
 // one row per facing; PLAYER_ROWS gives them as {down, left, right, up}.
 PLAYER_SPRITE := Sprite{
-	path = "assets/player.png", frame_w = 32, frame_h = 32, padding = 2, frames = 4, row = 0, fps = 8,
+	path = "assets/Player.png", frame_w = 48, frame_h = 48, padding = 0, frames = 11, row = 0, fps = 24,
 	fallback = {245, 205, 90, 255},
 }
 PLAYER_DIRECTIONAL :: true
