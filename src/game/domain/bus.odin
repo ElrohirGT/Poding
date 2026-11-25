@@ -13,6 +13,9 @@ Date_Start_Requested      :: struct { who: Character_Id }
 Play_Card_Requested       :: struct { hand_index: u8 }
 End_Turn_Requested        :: struct {}
 Probe_Requested           :: struct { who: Character_Id, approach: Approach }
+Deck_Add_Requested        :: struct { who: Character_Id, card: Card_Id }
+Deck_Remove_Requested     :: struct { who: Character_Id, card: Card_Id }
+Deck_Auto_Fill_Requested  :: struct { who: Character_Id }
 
 // ---- facts
 Scene_Changed       :: struct { to: Scene_Id }
@@ -34,15 +37,17 @@ Turn_Started        :: struct { turn: u8 }
 Reveal_Source       :: enum u8 { Probe, Date }
 Preference_Revealed :: struct { who: Character_Id, approach: Approach, reaction: Reaction, source: Reveal_Source }
 Date_Ended          :: struct { who: Character_Id, won: bool, affinity_gained: Currency }
+Deck_Changed        :: struct { who: Character_Id }
 
 Event :: union {
 	// intents
 	Scene_Change_Requested, Tapped, Buy_Pack_Requested, Focus_Character_Requested,
 	Date_Start_Requested, Play_Card_Requested, End_Turn_Requested, Probe_Requested,
+	Deck_Add_Requested, Deck_Remove_Requested, Deck_Auto_Fill_Requested,
 	// facts
 	Scene_Changed, Resource_Gained, Pack_Opened, Purchase_Rejected, Action_Rejected,
 	Reveal_Finished, Focus_Changed, Date_Started, Card_Played, Ai_Acted, Turn_Started,
-	Preference_Revealed, Date_Ended,
+	Preference_Revealed, Date_Ended, Deck_Changed,
 }
 
 // Double-buffered: events emitted in frame N are readable in frame N+1.

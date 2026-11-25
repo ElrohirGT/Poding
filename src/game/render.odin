@@ -85,6 +85,30 @@ label_text :: proc(w: ^World, l: ^Label) -> string {
 		return fmt.tprintf("Interest %.0f/%.0f", b.interest, domain.CHARACTERS[b.who].goal)
 	case .Dialogue:
 		return fmt.tprintf("%s is waiting for you...", domain.CHARACTERS[s.focus].name)
+	case .Deck_Title:
+		return fmt.tprintf("%s's deck: %d/%d cards", domain.CHARACTERS[s.focus].name,
+			domain.deck_size(s, s.focus), domain.MAX_DECK)
+	case .Deck_Rules:
+		return fmt.tprintf("Min %d cards. Max copies: Common %d, Rare %d, Epic %d, Legendary %d",
+			domain.DECK_MIN,
+			domain.COPY_LIMIT[.Common], domain.COPY_LIMIT[.Rare],
+			domain.COPY_LIMIT[.Epic], domain.COPY_LIMIT[.Legendary])
+	case .Deck_Status:
+		n := domain.deck_size(s, s.focus)
+		if n < domain.DECK_MIN {
+			missing := domain.DECK_MIN - n
+			return fmt.tprintf("Add %d more card%s to go on dates", missing, "" if missing == 1 else "s")
+		}
+		return "Deck ready"
+	case .Deck_Card_Info:
+		c := domain.Card_Id(l.arg)
+		def := domain.CARDS[c]
+		ht, _ := hint_text(domain.card_hint(s, s.focus, def))
+		return fmt.tprintf("%s | %s | E%d P%.0f | %s",
+			rarity_name(def.rarity), approach_name(def.approach), def.energy, def.power, ht)
+	case .Deck_Card_Count:
+		c := domain.Card_Id(l.arg)
+		return fmt.tprintf("%d/%d (own %d)", s.decks[s.focus][c], domain.copy_limit(c), s.collection[c])
 	}
 	return ""
 }
@@ -133,11 +157,22 @@ render_buttons :: proc(w: ^World, z: u8) {
 	}
 }
 
+rarity_name :: proc(r: domain.Rarity) -> string {
+	switch r {
+	case .Common:    return "Common"
+	case .Rare:      return "Rare"
+	case .Epic:      return "Epic"
+	case .Legendary: return "Legendary"
+	}
+	return ""
+}
+
 rarity_color :: proc(r: domain.Rarity) -> raylib.Color {
 	switch r {
 	case .Common: return {110, 120, 140, 255}
 	case .Rare:   return {70, 130, 210, 255}
 	case .Epic:   return {170, 90, 210, 255}
+	case .Legendary: return {230, 170, 50, 255}
 	}
 	return {110, 120, 140, 255}
 }

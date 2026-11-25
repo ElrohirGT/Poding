@@ -41,6 +41,7 @@ SCENES := [domain.Scene_Id]Scene_Def{
 	.Home = {build = home_build},
 	.Shop = {build = shop_build, systems = []System{reveal_spawner, reveal}},
 	.Date = {build = date_build, systems = []System{hand_view, result_spawner}},
+	.Deck = {build = deck_build},
 }
 
 // Runs every frame, in this order. scene_manager is first so nothing holds
@@ -48,7 +49,6 @@ SCENES := [domain.Scene_Id]Scene_Def{
 PIPELINE := []System{
 	input_poll,
 	scene_manager,
-	deck_sync,
 	hit_test,
 	gate,
 	button,
@@ -60,6 +60,7 @@ PIPELINE := []System{
 	date_start_rules,
 	play_card_rules,
 	end_turn_rules,
+	deck_rules,
 	navigation_flow,
 	layout,
 	tween,
@@ -72,9 +73,19 @@ world_init :: proc(store: ^ecs.Store) -> ^World {
 	w.store = store
 	domain.bus_init(&w.bus)
 	w.rng = context.random_generator
-	// Starting collection: enough generic cards for a first deck.
-	w.state.collection[.Compliment] = 6
-	w.state.collection[.Smile] = 6
+	// Starting collection: enough commons for a first legal deck. With a
+	// 5-copy limit per common and a 24-card minimum, at least five distinct
+	// commons are needed (these give 28 usable cards).
+	w.state.collection[.Compliment]  = 6
+	w.state.collection[.Smile]       = 6
+	w.state.collection[.Ask_Question] = 5
+	w.state.collection[.Listen]      = 5
+	w.state.collection[.Share_Story] = 4
+	w.state.collection[.Light_Tease] = 4
+	// Start each character with a legal deck; the Deck screen edits it.
+	for who in domain.Character_Id {
+		domain.auto_deck(&w.state, who)
+	}
 	return w
 }
 

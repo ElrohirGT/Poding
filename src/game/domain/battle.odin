@@ -83,39 +83,11 @@ card_hint :: proc(s: ^State, who: Character_Id, c: Card_Def) -> Hint {
 	return .Unknown
 }
 
-// Temporary stand-in until the Deck screen exists: fills decks[who] from the
-// collection, preferring known-good cards, then generic, then unknown.
-// Known Flat/Risky cards are skipped.
-auto_deck :: proc(s: ^State, who: Character_Id, target := 12) {
-	s.decks[who] = {}
-	picked := 0
-	for tier in 0 ..< 3 {
-		for c in Card_Id {
-			if c == .None { continue }
-			def := CARDS[c]
-			h := card_hint(s, who, def)
-			want: int
-			switch h {
-			case .Works:   want = 0
-			case .Always:  want = 1
-			case .Unknown: want = 2
-			case .Flat, .Risky: continue
-			}
-			if want != tier { continue }
-			for s.decks[who][c] < u8(min(s.collection[c], 255)) && picked < target {
-				s.decks[who][c] += 1
-				picked += 1
-			}
-		}
-	}
-}
-
 // ---------------------------------------------------------------- starting a date
 
 date_start_blocker :: proc(s: ^State, b: ^Battle, who: Character_Id) -> Reject_Reason {
-	if b.phase == .Player_Turn          { return .Battle_In_Progress }
-	if deck_size(s, who) < DECK_MIN     { return .Deck_Too_Small }
-	return .None
+	if b.phase == .Player_Turn { return .Battle_In_Progress }
+	return deck_blocker(s, who) // size + copy limits + ownership
 }
 
 // Expands decks[who] into a shuffled draw pile and deals the opening hand.

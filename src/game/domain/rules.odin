@@ -167,10 +167,13 @@ can_do :: proc(s: ^State, b: ^Battle, intent: Event) -> bool {
 	case Date_Start_Requested: return date_start_blocker(s, b, v.who) == .None
 	case Play_Card_Requested:  return play_blocker(s, b, v.hand_index) == .None
 	case End_Turn_Requested:   return b.phase == .Player_Turn
+	case Deck_Add_Requested:    return deck_add_blocker(s, b, v.who, v.card) == .None
+	case Deck_Remove_Requested: return deck_remove_blocker(s, b, v.who, v.card) == .None
+	case Deck_Auto_Fill_Requested: return deck_edit_blocker(b) == .None
 	case Scene_Change_Requested, Tapped, Focus_Character_Requested,
 	     Scene_Changed, Resource_Gained, Pack_Opened, Purchase_Rejected, Action_Rejected,
 	     Reveal_Finished, Focus_Changed, Date_Started, Card_Played, Ai_Acted, Turn_Started,
-	     Preference_Revealed, Date_Ended:
+	     Preference_Revealed, Date_Ended, Deck_Changed:
 		return true
 	case nil:
 		return false
@@ -186,10 +189,13 @@ blocker_of :: proc(s: ^State, b: ^Battle, intent: Event) -> Reject_Reason {
 	case Date_Start_Requested: return date_start_blocker(s, b, v.who)
 	case Play_Card_Requested:  return play_blocker(s, b, v.hand_index)
 	case End_Turn_Requested:   return .None if b.phase == .Player_Turn else .Not_In_Battle
+	case Deck_Add_Requested:    return deck_add_blocker(s, b, v.who, v.card)
+	case Deck_Remove_Requested: return deck_remove_blocker(s, b, v.who, v.card)
+	case Deck_Auto_Fill_Requested: return deck_edit_blocker(b)
 	case Scene_Change_Requested, Tapped, Focus_Character_Requested,
 	     Scene_Changed, Resource_Gained, Pack_Opened, Purchase_Rejected, Action_Rejected,
 	     Reveal_Finished, Focus_Changed, Date_Started, Card_Played, Ai_Acted, Turn_Started,
-	     Preference_Revealed, Date_Ended:
+	     Preference_Revealed, Date_Ended, Deck_Changed:
 		return .None
 	case nil:
 		return .None

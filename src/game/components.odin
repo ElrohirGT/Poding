@@ -49,6 +49,11 @@ Bind :: enum u8 {
 	Discard_Count,
 	Interest_Text,
 	Dialogue,
+	Deck_Title,
+	Deck_Rules,
+	Deck_Status,
+	Deck_Card_Info,  // arg = Card_Id
+	Deck_Card_Count, // arg = Card_Id
 }
 
 Label :: struct {
