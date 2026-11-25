@@ -107,6 +107,23 @@ Toast :: struct {
 // scene manager can remove them when the screen changes.
 Scoped :: struct { scene: domain.Scene_Id }
 
+// A sprite-sheet animation drawn into the entity's Area (instead of a Panel).
+// The sheet is a grid of frame_w x frame_h cells: `row` picks the strip, the
+// first `frames` cells of that row are the animation. `padding` is the gap
+// between cells and `margin` the border around the sheet (both default to 0).
+Sprite :: struct {
+	path:             string,        // image path, relative to the working dir
+	frame_w, frame_h: i32,           // size of one cell in the sheet, in pixels
+	padding:          i32,           // empty pixels between neighbouring cells (columns and rows)
+	margin:           i32,           // empty pixels around the whole sheet, before the first cell
+	frames:           i32,           // cells used in the row
+	row:              i32,
+	fps:              f32,
+	playing:          bool,          // false = hold the first frame
+	time:             f32,
+	fallback:         raylib.Color,  // drawn as a box when the image is missing
+}
+
 // ---- Home map
 
 // The walkable character on the Home map. Its Layout is driven by World.map_pos.
@@ -135,6 +152,7 @@ register_components :: proc(st: ^ecs.Store) {
 	ecs.store_register_component(st, ^Lifetime)
 	ecs.store_register_component(st, ^Toast)
 	ecs.store_register_component(st, ^Scoped)
+	ecs.store_register_component(st, ^Sprite)
 	ecs.store_register_component(st, ^Map_Player)
 	ecs.store_register_component(st, ^Map_Spot)
 }

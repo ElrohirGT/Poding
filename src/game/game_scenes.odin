@@ -78,8 +78,10 @@ home_build :: proc(w: ^World) -> ^ecs.Scene {
 	ui_label(sc, lib, {0.33, 0.12, 0.60, 0.25}, "Library", size = 20)
 
 	for who in domain.Character_Id {
+		sprite := CHARACTER_SPRITES[who]
+		sprite.fallback = character_color(who)
 		npc := ui_node(sc, field, MAP_CHARACTER_RECT[who],
-			ecs.new_comp(Panel{color = character_color(who)}),
+			ecs.new_comp(sprite),
 			ecs.new_comp(Map_Spot{kind = .Character, who = who}),
 		)
 		ui_label(sc, npc, {0, 1.08, 1.6, 0.3}, domain.CHARACTERS[who].name, size = 16)
@@ -87,7 +89,7 @@ home_build :: proc(w: ^World) -> ^ecs.Scene {
 
 	// spawned last so it is drawn on top; map_walk positions it every frame
 	player := ui_node(sc, field, {0, 0, 0.03, 0.05},
-		ecs.new_comp(Panel{color = {245, 205, 90, 255}}),
+		ecs.new_comp(PLAYER_SPRITE),
 		ecs.new_comp(Map_Player{}),
 	)
 	ui_label(sc, player, {-0.2, -1.2, 2.5, 1.0}, "You", size = 14)

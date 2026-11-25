@@ -22,6 +22,26 @@ MAP_CHARACTER_RECT := [domain.Character_Id][4]f32{
 	.Kai = {0.81, 0.42, 0.09, 0.16},
 }
 
+// ---- sprites ---------------------------------------------------------------
+// Point `path` at your sprite sheet and describe its grid. Paths are relative to
+// where you run the game. Until the file exists the coloured box is drawn.
+//   frame_w/frame_h: one cell in pixels   frames: cells used   row: which strip
+//   padding: gap in pixels between cells   margin: border around the whole sheet
+//   fps: animation speed                  playing: NPCs idle-animate forever
+CHARACTER_SPRITES := [domain.Character_Id]Sprite{
+	.Rin = {path = "assets/Rin.png", frame_w = 50, frame_h = 50, padding = 1, frames = 7, row = 0, fps = 6, playing = true},
+	.Kai = {path = "assets/Kai.png", frame_w = 85, frame_h = 115, padding = 15, frames = 8, row = 0, fps = 6, playing = true},
+}
+
+// The player only animates while walking. With PLAYER_DIRECTIONAL the sheet has
+// one row per facing; PLAYER_ROWS gives them as {down, left, right, up}.
+PLAYER_SPRITE := Sprite{
+	path = "assets/player.png", frame_w = 32, frame_h = 32, padding = 2, frames = 4, row = 0, fps = 8,
+	fallback = {245, 205, 90, 255},
+}
+PLAYER_DIRECTIONAL :: true
+PLAYER_ROWS        := [4]i32{0, 1, 2, 3}
+
 character_color :: proc(who: domain.Character_Id) -> raylib.Color {
 	switch who {
 	case .Rin: return {210, 110, 160, 255}
@@ -55,6 +75,7 @@ map_walk :: proc(w: ^World) {
 	if raylib.IsKeyDown(.S) || raylib.IsKeyDown(.DOWN)  { dir.y += 1 }
 	if raylib.IsKeyDown(.A) || raylib.IsKeyDown(.LEFT)  { dir.x -= 1 }
 	if raylib.IsKeyDown(.D) || raylib.IsKeyDown(.RIGHT) { dir.x += 1 }
+	moving := dir != {}
 	if dir.x != 0 && dir.y != 0 { dir *= 0.70710678 }
 	step := dir * (MAP_PLAYER_SPEED * min(w.dt, 0.05))
 
@@ -76,6 +97,19 @@ map_walk :: proc(w: ^World) {
 	for q in ecs.store_query3(w.store, ^Map_Player, ^Layout, ^Area) {
 		q.ct2.rect = {(pos.x - half) / size.x, (pos.y - half) / size.y, MAP_PLAYER_SIZE / size.x, MAP_PLAYER_SIZE / size.y}
 		q.ct3^ = Area{rect.x, rect.y, rect.width, rect.height}
+	}
+
+	// Walk animation: play while moving, pick the row for the facing direction.
+	for q in ecs.store_query2(w.store, ^Map_Player, ^Sprite) {
+		sp := q.ct2
+		sp.playing = moving
+		if moving && PLAYER_DIRECTIONAL {
+			switch {
+			case abs(dir.x) > abs(dir.y): sp.row = PLAYER_ROWS[2] if dir.x > 0 else PLAYER_ROWS[1]
+			case dir.y > 0:               sp.row = PLAYER_ROWS[0]
+			case:                         sp.row = PLAYER_ROWS[3]
+			}
+		}
 	}
 
 	// Which spot (if any) is the player next to? Closest wins.
