@@ -26,6 +26,7 @@ scene_despawn :: proc(sc: ^Scene, st: ^Store) {
 	for ent in sc.ids {
 		store_remove_entity(st, ent)
 	}
+	clear(&sc.ids)
 }
 
 scene_deinit :: proc(sc: ^Scene, st: ^Store) {
