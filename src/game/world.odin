@@ -28,6 +28,12 @@ World :: struct {
 	// set by scene builders; nil when not in that scene
 	stage:         ^Area, // Shop reveal stage
 	reveal_active: bool,
+
+	// Home map. Position is a fraction of the map area (centre of the player), so
+	// it survives scene rebuilds and window changes.
+	map_pos:  [2]f32,
+	map_area: ^Area,            // set by home_build; nil when not on Home
+	map_near: Maybe(Map_Spot),  // the spot the player is standing next to
 }
 
 System :: proc(w: ^World)
@@ -38,7 +44,7 @@ Scene_Def :: struct {
 }
 
 SCENES := [domain.Scene_Id]Scene_Def{
-	.Home = {build = home_build},
+	.Home = {build = home_build, systems = []System{map_walk, map_interact}},
 	.Shop = {build = shop_build, systems = []System{reveal_spawner, reveal}},
 	.Date = {build = date_build, systems = []System{hand_view, result_spawner}},
 	.Deck = {build = deck_build},
@@ -73,6 +79,7 @@ world_init :: proc(store: ^ecs.Store) -> ^World {
 	w.store = store
 	domain.bus_init(&w.bus)
 	w.rng = context.random_generator
+	w.map_pos = MAP_START
 	// Starting collection: enough commons for a first legal deck. With a
 	// 5-copy limit per common and a 24-card minimum, at least five distinct
 	// commons are needed (these give 28 usable cards).
@@ -134,6 +141,8 @@ scene_manager :: proc(w: ^World) {
 			w.active = nil
 		}
 		w.stage = nil
+		w.map_area = nil
+		w.map_near = nil
 		w.reveal_active = false
 
 		w.active_id = req.to

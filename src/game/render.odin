@@ -106,6 +106,13 @@ label_text :: proc(w: ^World, l: ^Label) -> string {
 		ht, _ := hint_text(domain.card_hint(s, s.focus, def))
 		return fmt.tprintf("%s | %s | E%d P%.0f | %s",
 			rarity_name(def.rarity), approach_name(def.approach), def.energy, def.power, ht)
+	case .Map_Prompt:
+		near, ok := w.map_near.?
+		if !ok { return "Walk up to someone to go on a date, or to the Library to build your deck" }
+		switch near.kind {
+		case .Library:   return "Press E: enter the Library and build your deck"
+		case .Character: return fmt.tprintf("Press E: go on a date with %s", domain.CHARACTERS[near.who].name)
+		}
 	case .Deck_Card_Count:
 		c := domain.Card_Id(l.arg)
 		return fmt.tprintf("%d/%d (own %d)", s.decks[s.focus][c], domain.copy_limit(c), s.collection[c])

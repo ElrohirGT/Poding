@@ -54,6 +54,7 @@ Bind :: enum u8 {
 	Deck_Status,
 	Deck_Card_Info,  // arg = Card_Id
 	Deck_Card_Count, // arg = Card_Id
+	Map_Prompt,      // what the player can do where they stand on the Home map
 }
 
 Label :: struct {
@@ -106,6 +107,19 @@ Toast :: struct {
 // scene manager can remove them when the screen changes.
 Scoped :: struct { scene: domain.Scene_Id }
 
+// ---- Home map
+
+// The walkable character on the Home map. Its Layout is driven by World.map_pos.
+Map_Player :: struct {}
+
+Map_Spot_Kind :: enum u8 { Library, Character }
+
+// Something on the map the player can walk up to (and is blocked by).
+Map_Spot :: struct {
+	kind: Map_Spot_Kind,
+	who:  domain.Character_Id, // used when kind == .Character
+}
+
 register_components :: proc(st: ^ecs.Store) {
 	ecs.store_register_component(st, ^Area)
 	ecs.store_register_component(st, ^Layout)
@@ -121,4 +135,6 @@ register_components :: proc(st: ^ecs.Store) {
 	ecs.store_register_component(st, ^Lifetime)
 	ecs.store_register_component(st, ^Toast)
 	ecs.store_register_component(st, ^Scoped)
+	ecs.store_register_component(st, ^Map_Player)
+	ecs.store_register_component(st, ^Map_Spot)
 }
