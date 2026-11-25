@@ -52,19 +52,58 @@ hud_build :: proc(w: ^World) -> ^ecs.Scene {
 
 // ---------------------------------------------------------------- Home
 
+// Home is a small walkable map (see map.odin): walk up to a character and press
+// E to go on a date, walk to the Library to build your deck. The notebook,
+// tap buttons and the Cards shop stay on the side.
 home_build :: proc(w: ^World) -> ^ecs.Scene {
 	sc := ecs.scene_init()
 	s := &w.screen
 	focus := w.state.focus
 
-	// focus tabs
+	// focus tabs (choose whose notebook to read / probe)
 	for who in domain.Character_Id {
 		ui_button(sc, s, {0.02 + f32(int(who)) * 0.12, 0.10, 0.11, 0.06},
 			domain.CHARACTERS[who].name, domain.Focus_Character_Requested{who}, selected = who == focus)
 	}
 
+	// ---- the map
+	field := ui_panel(sc, s, {0.02, 0.18, 0.66, 0.60}, {34, 64, 48, 255})
+	w.map_area = field
+
+	lib := ui_node(sc, field, MAP_LIBRARY_RECT,
+		ecs.new_comp(Panel{color = {120, 86, 62, 255}}),
+		ecs.new_comp(Map_Spot{kind = .Library}),
+	)
+	ui_panel(sc, lib, {0.40, 0.55, 0.20, 0.45}, {50, 34, 26, 255}) // door
+	ui_label(sc, lib, {0.33, 0.12, 0.60, 0.25}, "Library", size = 20)
+
+	for who in domain.Character_Id {
+		sprite := CHARACTER_SPRITES[who]
+		sprite.fallback = character_color(who)
+		npc := ui_node(sc, field, MAP_CHARACTER_RECT[who],
+			ecs.new_comp(sprite),
+			ecs.new_comp(Map_Spot{kind = .Character, who = who}),
+		)
+		ui_label(sc, npc, {0, 1.08, 1.6, 0.3}, domain.CHARACTERS[who].name, size = 16)
+	}
+
+	// spawned last so it is drawn on top; map_walk positions it every frame
+	player := ui_node(sc, field, {0, 0, 0.03, 0.05},
+		ecs.new_comp(PLAYER_SPRITE),
+		ecs.new_comp(Map_Player{}),
+	)
+	ui_label(sc, player, {-0.2, -1.2, 2.5, 1.0}, "You", size = 14)
+
+	ui_label(sc, s, {0.02, 0.80, 0.66, 0.05}, bind = .Map_Prompt, size = 18)
+	ui_label(sc, s, {0.02, 0.965, 0.66, 0.03}, "Move: WASD / arrow keys    Interact: E", size = 12)
+
+	// affinity of the focused character
+	ui_label(sc, s, {0.02, 0.86, 0.4, 0.05}, bind = .Affinity_Text, size = 18)
+	ui_progress(sc, s, {0.02, 0.92, 0.4, 0.03}, .Affinity, {240, 120, 160, 255})
+
+	// ---- side panel
 	// notebook (rows are baked for the focused girl; Home rebuilds when focus changes)
-	nb := ui_panel(sc, s, {0.02, 0.18, 0.28, 0.40})
+	nb := ui_panel(sc, s, {0.71, 0.18, 0.27, 0.40})
 	ui_label(sc, nb, {0.05, 0.03, 0.9, 0.12}, "Notebook", size = 18)
 	row := 0
 	for a in domain.Approach {
@@ -76,24 +115,9 @@ home_build :: proc(w: ^World) -> ^ecs.Scene {
 	}
 	ui_label(sc, nb, {0.05, 0.92, 0.9, 0.07}, bind = .Probe_Cost, size = 12)
 
-	// portrait + actions
-	portrait := ui_panel(sc, s, {0.34, 0.18, 0.28, 0.40}, {70, 50, 90, 255})
-	ui_label(sc, portrait, {0.05, 0.4, 0.9, 0.2}, bind = .Focus_Name, size = 28)
-	ui_button(sc, s, {0.66, 0.20, 0.30, 0.12}, "Charm (+coins)", domain.Tapped{.Coins})
-	ui_button(sc, s, {0.66, 0.36, 0.30, 0.12}, "Observe (+insight)", domain.Tapped{.Insight})
-
-	// affinity
-	ui_label(sc, s, {0.02, 0.61, 0.4, 0.05}, bind = .Affinity_Text, size = 18)
-	ui_progress(sc, s, {0.02, 0.67, 0.6, 0.03}, .Affinity, {240, 120, 160, 255})
-
-	// dialogue
-	ui_panel(sc, s, {0.02, 0.73, 0.96, 0.07})
-	ui_label(sc, s, {0.04, 0.74, 0.92, 0.05}, bind = .Dialogue, size = 18)
-
-	// navigation
-	ui_button(sc, s, {0.02, 0.84, 0.30, 0.11}, "Cards", domain.Scene_Change_Requested{.Shop})
-	ui_button(sc, s, {0.35, 0.84, 0.30, 0.11}, "Date", domain.Date_Start_Requested{focus})
-	ui_button(sc, s, {0.68, 0.84, 0.30, 0.11}, "Deck", domain.Scene_Change_Requested{.Deck})
+	ui_button(sc, s, {0.71, 0.60, 0.27, 0.09}, "Charm (+coins)", domain.Tapped{.Coins})
+	ui_button(sc, s, {0.71, 0.71, 0.27, 0.09}, "Observe (+insight)", domain.Tapped{.Insight})
+	ui_button(sc, s, {0.71, 0.84, 0.27, 0.11}, "Cards", domain.Scene_Change_Requested{.Shop})
 	return sc
 }
 

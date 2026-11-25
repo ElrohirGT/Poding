@@ -28,6 +28,15 @@ World :: struct {
 	// set by scene builders; nil when not in that scene
 	stage:         ^Area, // Shop reveal stage
 	reveal_active: bool,
+
+	// Home map. Position is a fraction of the map area (centre of the player), so
+	// it survives scene rebuilds and window changes.
+	map_pos:  [2]f32,
+	map_area: ^Area,            // set by home_build; nil when not on Home
+	map_near: Maybe(Map_Spot),  // the spot the player is standing next to
+
+	// Sprite sheets by path (see sprites.odin). Failed loads are cached too.
+	textures: map[string]raylib.Texture2D,
 }
 
 System :: proc(w: ^World)
@@ -38,7 +47,7 @@ Scene_Def :: struct {
 }
 
 SCENES := [domain.Scene_Id]Scene_Def{
-	.Home = {build = home_build},
+	.Home = {build = home_build, systems = []System{map_walk, map_interact}},
 	.Shop = {build = shop_build, systems = []System{reveal_spawner, reveal}},
 	.Date = {build = date_build, systems = []System{hand_view, result_spawner}},
 	.Deck = {build = deck_build},
@@ -64,6 +73,7 @@ PIPELINE := []System{
 	navigation_flow,
 	layout,
 	tween,
+	sprite_animate,
 	toast,
 	lifetime,
 }
@@ -73,6 +83,8 @@ world_init :: proc(store: ^ecs.Store) -> ^World {
 	w.store = store
 	domain.bus_init(&w.bus)
 	w.rng = context.random_generator
+	w.map_pos = MAP_START
+	w.textures = make(map[string]raylib.Texture2D)
 	// Starting collection: enough commons for a first legal deck. With a
 	// 5-copy limit per common and a 24-card minimum, at least five distinct
 	// commons are needed (these give 28 usable cards).
@@ -92,6 +104,10 @@ world_init :: proc(store: ^ecs.Store) -> ^World {
 world_deinit :: proc(w: ^World) {
 	if w.active != nil { ecs.scene_deinit(w.active, w.store) }
 	if w.hud != nil    { ecs.scene_deinit(w.hud, w.store) }
+	for _, tex in w.textures {
+		if tex.id != 0 { raylib.UnloadTexture(tex) }
+	}
+	delete(w.textures)
 	domain.bus_deinit(&w.bus)
 	free(w)
 }
@@ -134,6 +150,8 @@ scene_manager :: proc(w: ^World) {
 			w.active = nil
 		}
 		w.stage = nil
+		w.map_area = nil
+		w.map_near = nil
 		w.reveal_active = false
 
 		w.active_id = req.to

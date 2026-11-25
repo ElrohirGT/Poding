@@ -188,13 +188,17 @@ deck_rules :: proc(w: ^World) {
 
 // The one non-UI emitter of intents: table of fact -> navigation.
 navigation_flow :: proc(w: ^World) {
+	date_starting := false
 	for _ in domain.bus_read(&w.bus, domain.Date_Started) {
+		date_starting = true
 		domain.bus_emit(&w.bus, domain.Scene_Change_Requested{.Date})
 	}
 	// Home and Deck are built per focused girl (notebook rows / deck buttons),
 	// so rebuild on a focus change.
 	for _ in domain.bus_read(&w.bus, domain.Focus_Changed) {
-		if w.active_id == .Home || w.active_id == .Deck {
+		// (walking up to someone on the Home map changes focus and starts the date
+		// in the same frame; the date wins, so Home is not rebuilt in that case)
+		if w.active_id == .Deck || (w.active_id == .Home && !date_starting) {
 			domain.bus_emit(&w.bus, domain.Scene_Change_Requested{w.active_id})
 		}
 	}

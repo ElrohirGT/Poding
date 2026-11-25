@@ -106,6 +106,13 @@ label_text :: proc(w: ^World, l: ^Label) -> string {
 		ht, _ := hint_text(domain.card_hint(s, s.focus, def))
 		return fmt.tprintf("%s | %s | E%d P%.0f | %s",
 			rarity_name(def.rarity), approach_name(def.approach), def.energy, def.power, ht)
+	case .Map_Prompt:
+		near, ok := w.map_near.?
+		if !ok { return "Walk up to someone to go on a date, or to the Library to build your deck" }
+		switch near.kind {
+		case .Library:   return "Press E: enter the Library and build your deck"
+		case .Character: return fmt.tprintf("Press E: go on a date with %s", domain.CHARACTERS[near.who].name)
+		}
 	case .Deck_Card_Count:
 		c := domain.Card_Id(l.arg)
 		return fmt.tprintf("%d/%d (own %d)", s.decks[s.focus][c], domain.copy_limit(c), s.collection[c])
@@ -221,6 +228,30 @@ render_cards :: proc(w: ^World) {
 	}
 }
 
+// Sprites are scaled to fit their Area (aspect kept, nearest-neighbour) and
+// stand on its bottom edge, so the Area stays the hitbox. A missing image
+// shows the fallback box instead.
+render_sprites :: proc(w: ^World) {
+	for q in ecs.store_query2(w.store, ^Sprite, ^Area) {
+		sp, a := q.ct1, q.ct2^
+		tex, ok := w.textures[sp.path]
+		if !ok || tex.id == 0 || sp.frame_w <= 0 || sp.frame_h <= 0 {
+			raylib.DrawRectangleRec(rl_rect(a), sp.fallback)
+			raylib.DrawRectangleLinesEx(rl_rect(a), 1, {90, 94, 110, 255})
+			continue
+		}
+		fw, fh := f32(sp.frame_w), f32(sp.frame_h)
+		scale := min(a.z / fw, a.w / fh)
+		dw, dh := fw * scale, fh * scale
+		dest := raylib.Rectangle{a.x + (a.z - dw) / 2, a.y + a.w - dh, dw, dh}
+		// cell stride = cell size + padding; the sheet may also start after a margin
+		sx := f32(sp.margin) + f32(sprite_frame(sp)) * (fw + f32(sp.padding))
+		sy := f32(sp.margin) + f32(sp.row) * (fh + f32(sp.padding))
+		src := raylib.Rectangle{sx, sy, fw, fh}
+		raylib.DrawTexturePro(tex, src, dest, {0, 0}, 0, WHITE)
+	}
+}
+
 render_labels :: proc(w: ^World, z: u8) {
 	for q in ecs.store_query2(w.store, ^Label, ^Area) {
 		l := q.ct1
@@ -265,7 +296,10 @@ render_all :: proc(w: ^World) {
 	for z in u8(0) ..= 1 {
 		render_panels(w, z)
 		render_buttons(w, z)
-		if z == 0 { render_cards(w) }
+		if z == 0 {
+			render_cards(w)
+			render_sprites(w)
+		}
 		render_progress(w, z)
 		render_labels(w, z)
 	}
