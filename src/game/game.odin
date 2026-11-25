@@ -15,6 +15,8 @@ GAME_CONFIG: GameConfig
 ENABLE_DEBUG := false
 FRAME := true
 
+Area :: [4]f32
+
 text_width :: proc(font: microui.Font, str: string) -> i32 {
 	cstr, err := strings.clone_to_cstring(str)
 	if err != nil {
@@ -25,71 +27,6 @@ text_width :: proc(font: microui.Font, str: string) -> i32 {
 
 text_height :: proc(font: microui.Font) -> i32 {
 	return FontSize
-}
-
-setup_windows :: proc(st: ^ecs.Store, cfg: ^GameConfig) {
-	game_area_id := ecs.store_spawn_with(st, []any{
-		ecs.new_comp(WindowArea{
-			name = "Game",
-			color = raylib.SKYBLUE,
-			current_area = cfg.GameRectangle,
-			ideal_area = cfg.GameRectangle
-		})
-	})
-								game_area := ecs.store_query1(st, ^WindowArea)[0]
-
-								ecs.store_spawn_with(st, []any{
-									ecs.new_comp(WindowArea{
-										name = "Debug",
-										color = raylib.PINK,
-										ideal_area = cfg.DebugRectangle,
-										current_area = cfg.DebugRectangle
-									})
-								})
-
-								ecs.store_spawn_with(st, []any{
-									ecs.new_comp(WindowSubArea{
-										name = "Battle Area",
-										color = raylib.RED,
-										parent = game_area,
-										get_current = proc(p: Area) -> Area {
-											return {10, 30, p.z - 20, p.w * 0.8 - 60}
-											},
-									})
-								})
-
-								ecs.store_spawn_with(st, []any{
-									ecs.new_comp(WindowSubArea{
-										name = "Card Area",
-										color = raylib.YELLOW,
-										parent = game_area,
-										get_current = proc(p: Area) -> Area {
-											return {p.x+10, p.w * 0.8 - 15, p.z - 20, p.w *0.2}
-											},
-									})
-								})
-
-								ecs.store_spawn_with(st, []any{
-									ecs.new_comp(WindowSubArea{
-										name = "Player sprite",
-										color = raylib.GREEN,
-										parent = game_area,
-										get_current = proc(p: Area) -> Area {
-											return {p.x+20, p.w*0.55, 128, 128}
-										}
-									})
-								})
-
-								ecs.store_spawn_with(st, []any{
-									ecs.new_comp(WindowSubArea{
-										name = "Enemy sprite",
-										color = raylib.ORANGE,
-										parent = game_area,
-										get_current = proc(p: Area) -> Area {
-											return {p.z-128-20, p.y+50, 128, 128}
-										}
-									})
-								})
 }
 
 main :: proc() {
