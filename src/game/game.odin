@@ -1,6 +1,7 @@
 package main
 
 import "ecs"
+import "domain"
 import "core:fmt"
 import "core:time"
 import "core:c"
@@ -104,24 +105,20 @@ main :: proc() {
 	defer raylib.CloseWindow()
 
 	store := ecs.store_init(5)
-	defer ecs.store_deinit(store)
+	defer ecs.store_deinit(store) // deferred first, so it runs after world_deinit
 
-	ecs.store_register_component(store, ^WindowArea)
-	ecs.store_register_component(store, ^WindowSubArea)
-	ecs.store_register_component(store, ^Life)
-	ecs.store_register_component(store, ^Area)
+	register_components(store)
 
-	scenes := setup_scenes(&cfg)
-	defer {
-		for sc in scenes {
-			ecs.scene_deinit(sc, store)
-		}
-	}
-	active_scene := scenes[0]
-	ecs.scene_spawn(active_scene, store)
-	// setup_windows(store, &cfg)
+	w := world_init(store)
+	defer world_deinit(w)
 
-	fmt.printfln("STORE:\n%#v", store)
+	// Persistent presentation (HUD) lives outside any screen.
+	w.screen = Area{0, 0, f32(cfg.ScreenWidth), f32(cfg.ScreenHeight)}
+	w.hud = hud_build(w)
+	ecs.scene_spawn(w.hud, store)
+
+	// First screen: ask the scene manager like any other navigation.
+	domain.bus_emit(&w.bus, domain.Scene_Change_Requested{.Home})
 
 	sec_in_ns: i64 = 1_000_000_000
 	max_frame_duration := sec_in_ns / i64(cfg.FpsCap)
@@ -137,23 +134,21 @@ main :: proc() {
 
 			dt := f32(frame_start - lastFrameStart) / f32(sec_in_ns)
 
-			// Needs to be before the input is consumed and handed over to microui
-			life_update(ecs.store_query1(store, ^Life))
+			// The game area shrinks to make room for the debug panel.
+			if ENABLE_DEBUG {
+				w.screen = cfg.GameRectangle
+			} else {
+				w.screen = Area{0, 0, f32(cfg.ScreenWidth), f32(cfg.ScreenHeight)}
+			}
 
-			// Get user input
+			// Debug toggles / microui input
 			get_input(ctx)
 
 			{
 				microui.begin(ctx)
 				defer microui.end(ctx)
 
-				windows := ecs.store_query1(store, ^WindowArea)
-				windows_setup(windows)
-				windows_update(windows, dt)
-				windows_render(windows)
-
-				subwindows_render(ecs.store_query1(store, ^WindowSubArea))
-				life_render(ecs.store_query2(store, ^Life, ^Area))
+				run_frame(w, dt)
 			}
 
 			render_microui(ctx)
